@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.def": "c",
+        "rvp_intrinsic.h": "c"
+    }
+}

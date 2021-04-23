@@ -39,6 +39,16 @@ enum riscv_code_model {
 };
 extern enum riscv_code_model riscv_cmodel;
 
+enum riscv_isa_spec_class {
+  ISA_SPEC_CLASS_NONE,
+
+  ISA_SPEC_CLASS_2P2,
+  ISA_SPEC_CLASS_20190608,
+  ISA_SPEC_CLASS_20191213
+};
+
+extern enum riscv_isa_spec_class riscv_isa_spec;
+
 /* Keep this list in sync with define_attr "tune" in riscv.md.  */
 enum riscv_microarchitecture_type {
   generic,
@@ -68,5 +78,12 @@ enum riscv_align_data {
 #define TARGET_ZKNH ((riscv_crypto_subext & MASK_ZKNH) != 0)
 #define TARGET_ZKSED ((riscv_crypto_subext & MASK_ZKSED) != 0)
 #define TARGET_ZKSH ((riscv_crypto_subext & MASK_ZKSH) != 0)
+#define MASK_ZPN (1 << 0)
+#define MASK_ZPRV (1 << 1)
+#define MASK_ZPSF (1 << 2)
+
+#define TARGET_ZPN ((riscv_rvp_subext & MASK_ZPN) != 0)
+#define TARGET_ZPRV ((riscv_rvp_subext & MASK_ZPRV) != 0)
+#define TARGET_ZPSF ((riscv_rvp_subext & MASK_ZPSF) != 0)
 
 #endif /* ! GCC_RISCV_OPTS_H */

@@ -212,3 +212,114 @@
 {
   return riscv_gpr_save_operation_p (op);
 })
+
+(define_predicate "imm2u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u02 (op)")))
+
+(define_predicate "imm3u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u03 (op)")))
+
+(define_predicate "imm4u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u04 (op)")))
+
+(define_predicate "imm5u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u05 (op)")))
+
+(define_predicate "imm6u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u06 (op)")))
+
+(define_predicate "rimm3u_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_operand 0 "imm3u_operand")))
+
+(define_predicate "rimm4u_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_operand 0 "imm4u_operand")))
+
+(define_predicate "rimm5u_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_operand 0 "imm5u_operand")))
+
+(define_predicate "rimm6u_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_operand 0 "imm6u_operand")))
+
+(define_predicate "pwr_7_operand"
+  (and (match_code "const_int")
+       (match_test "INTVAL (op) != 0
+		    && (unsigned) exact_log2 (INTVAL (op)) <= 7")))
+
+(define_predicate "insv_operand"
+  (match_code "const_int")
+{
+  return INTVAL (op) == 0
+	 || INTVAL (op) == 8
+	 || INTVAL (op) == 16
+	 || INTVAL (op) == 24;
+})
+
+(define_predicate "insv64_operand"
+  (match_code "const_int")
+{
+  return INTVAL (op) == 0
+	 || INTVAL (op) == 8
+	 || INTVAL (op) == 16
+	 || INTVAL (op) == 24
+	 || INTVAL (op) == 32
+	 || INTVAL (op) == 40
+	 || INTVAL (op) == 48
+	 || INTVAL (op) == 56;
+})
+
+(define_predicate "imm_0_1_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (match_test "satisfies_constraint_v00 (op)")
+	    (match_test "satisfies_constraint_v01 (op)"))))
+
+(define_predicate "imm_1_2_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (match_test "satisfies_constraint_v01 (op)")
+	    (match_test "satisfies_constraint_v02 (op)"))))
+
+(define_predicate "imm_2_3_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (match_test "satisfies_constraint_v02 (op)")
+	    (match_test "satisfies_constraint_v03 (op)"))))
+
+(define_predicate "imm_1_2_4_8_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (ior (match_test "satisfies_constraint_v01 (op)")
+		 (match_test "satisfies_constraint_v02 (op)"))
+	    (ior (match_test "satisfies_constraint_v04 (op)")
+		 (match_test "satisfies_constraint_v08 (op)")))))
+
+(define_predicate "imm_extract_operand"
+  (match_test "satisfies_constraint_Bext (op)"))
+
+(define_predicate "imm_15_16_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (match_test "satisfies_constraint_v15 (op)")
+	    (match_test "satisfies_constraint_v16 (op)"))))
+
+(define_predicate "register_even_operand"
+  (match_operand 0 "register_operand")
+{
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op); /* Possibly a MEM */
+
+  if (!REG_P (op))
+    return false;
+
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
+    return true;
+
+  return ((!TARGET_64BIT
+	   && GP_REG_P (REGNO (op))
+	   && (REGNO (op) & 1) == 0)
+	  || (TARGET_64BIT && GP_REG_P (REGNO (op))));
+})

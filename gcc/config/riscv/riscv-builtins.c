@@ -36,11 +36,23 @@ along with GCC; see the file COPYING3.  If not see
 #include "stor-layout.h"
 #include "expr.h"
 #include "langhooks.h"
+#include "function.h"
+#include "emit-rtl.h"
+#include "explow.h"
 
 /* Macros to create an enumeration identifier for a function prototype.  */
 #define RISCV_FTYPE_NAME0(A) RISCV_##A##_FTYPE
 #define RISCV_FTYPE_NAME1(A, B) RISCV_##A##_FTYPE_##B
 #define RISCV_FTYPE_NAME2(A, B, C) RISCV_##A##_FTYPE_##B##_##C
+#define RISCV_FTYPE_NAME3(A, B, C, D) RISCV_##A##_FTYPE_##B##_##C##_##D
+#define RISCV_FTYPE_NAME4(A, B, C, D, E) \
+  RISCV_##A##_FTYPE_##B##_##C##_##D##_##E
+#define RISCV_FTYPE_NAME5(A, B, C, D, E, F) \
+  RISCV_##A##_FTYPE_##B##_##C##_##D##_##E##_##F
+#define RISCV_FTYPE_NAME6(A, B, C, D, E, F, G) \
+  RISCV_##A##_FTYPE_##B##_##C##_##D##_##E##_##F##_##G
+#define RISCV_FTYPE_NAME7(A, B, C, D, E, F, G, H) \
+  RISCV_##A##_FTYPE_##B##_##C##_##D##_##E##_##F##_##G##_##H
 
 /* Classifies the prototype of a built-in function.  */
 enum riscv_function_type {
@@ -86,7 +98,13 @@ struct riscv_builtin_description {
   unsigned int (*avail) (void);
 };
 
+AVAIL (rvp, TARGET_ZPN || TARGET_ZPSF || TARGET_ZPRV)
 AVAIL (hard_float, TARGET_HARD_FLOAT)
+AVAIL (zprv, TARGET_ZPRV)
+AVAIL (zpsf, TARGET_ZPSF)
+AVAIL (zpn, TARGET_ZPN)
+AVAIL (zpn64, TARGET_ZPN && TARGET_64BIT)
+AVAIL (zpn32, TARGET_ZPN && !TARGET_64BIT)
 
 AVAIL (crypto_zknd32, TARGET_ZKND && !TARGET_64BIT)
 AVAIL (crypto_zknd64, TARGET_ZKND && TARGET_64BIT)
@@ -132,11 +150,59 @@ AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
   RISCV_BUILTIN (INSN, #INSN, RISCV_BUILTIN_DIRECT_NO_TARGET,		\
 		FUNCTION_TYPE, AVAIL)
 
+#define RVP_RISCV_BUILTIN(INSN, NAME,	FUNCTION_TYPE, AVAIL)	\
+  { CODE_FOR_ ## INSN, "__builtin_riscv_" NAME,			\
+    RISCV_BUILTIN_DIRECT, FUNCTION_TYPE, riscv_builtin_avail_ ## AVAIL }
+
+#define RVP_RISCV_BUILTIN(INSN, NAME,	BUILTIN_TYPE, FUNCTION_TYPE, AVAIL)	\
+  { CODE_FOR_ ## INSN, "__builtin_riscv_" NAME,			\
+    BUILTIN_TYPE, FUNCTION_TYPE, riscv_builtin_avail_ ## AVAIL }
+
+#define RVP_NO_TARGET_BUILTIN(ICODE, INSN, FUNCTION_TYPE, AVAIL)			\
+  RVP_RISCV_BUILTIN (ICODE, #INSN, RISCV_BUILTIN_DIRECT_NO_TARGET, FUNCTION_TYPE, AVAIL)
+
+#define RVP_DIRECT_BUILTIN(ICODE, INSN, FUNCTION_TYPE, AVAIL)			\
+  RVP_RISCV_BUILTIN (ICODE, #INSN, RISCV_BUILTIN_DIRECT, FUNCTION_TYPE, AVAIL)
+
+/* Helper type node for target-specific types support 
+   [FIXME] if you find a better way to define insn patterns with 
+   arguments intxlen_t */
+tree uint_xlen_node;
+tree int_xlen_node;
+
 /* Argument types.  */
 #define RISCV_ATYPE_VOID void_type_node
-#define RISCV_ATYPE_USI unsigned_intSI_type_node
 #define RISCV_ATYPE_SI intSI_type_node
+#define RISCV_ATYPE_USI unsigned_intSI_type_node
 #define RISCV_ATYPE_DI intDI_type_node
+#define RISCV_ATYPE_UDI unsigned_intDI_type_node
+#define RISCV_ATYPE_ULONG long_unsigned_type_node
+#define RISCV_ATYPE_LONG long_integer_type_node
+#define RISCV_ATYPE_LLONG long_long_integer_type_node
+#define RISCV_ATYPE_ULLONG  long_long_unsigned_type_node
+#define RISCV_ATYPE_PSI build_pointer_type (integer_type_node)
+#define RISCV_ATYPE_PUSI build_pointer_type (unsigned_type_node)
+#define RISCV_ATYPE_PLLONG build_pointer_type (long_long_integer_type_node)
+#define RISCV_ATYPE_PULLONG build_pointer_type (long_long_unsigned_type_node)
+#define RISCV_ATYPE_TI intTI_type_node
+#define RISCV_ATYPE_UTI unsigned_intTI_type_node
+#define RISCV_ATYPE_V4QI build_vector_type (intQI_type_node, 4)
+#define RISCV_ATYPE_UV4QI build_vector_type (unsigned_intQI_type_node, 4)
+#define RISCV_ATYPE_V8QI build_vector_type (intQI_type_node, 8)
+#define RISCV_ATYPE_UV8QI build_vector_type (unsigned_intQI_type_node, 8)
+#define RISCV_ATYPE_V2HI build_vector_type (intHI_type_node, 2)
+#define RISCV_ATYPE_UV2HI build_vector_type (unsigned_intHI_type_node, 2)
+#define RISCV_ATYPE_V4HI build_vector_type (intHI_type_node, 4)
+#define RISCV_ATYPE_UV4HI build_vector_type (unsigned_intHI_type_node, 4)
+#define RISCV_ATYPE_V2SI build_vector_type (intSI_type_node, 2)
+#define RISCV_ATYPE_UV2SI build_vector_type (unsigned_intSI_type_node, 2)
+#define RISCV_ATYPE_V4SI build_vector_type (intSI_type_node, 4)
+#define RISCV_ATYPE_UV4SI build_vector_type (unsigned_intSI_type_node, 4)
+#define RISCV_ATYPE_V8HI build_vector_type (intHI_type_node, 8)
+#define RISCV_ATYPE_UV8HI build_vector_type (unsigned_intHI_type_node, 8)
+
+#define RISCV_ATYPE_IXLEN  int_xlen_node
+#define RISCV_ATYPE_UIXLEN uint_xlen_node
 
 /* RISCV_FTYPE_ATYPESN takes N RISCV_FTYPES-like type codes and lists
    their associated RISCV_ATYPEs.  */
@@ -146,9 +212,25 @@ AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
   RISCV_ATYPE_##A, RISCV_ATYPE_##B
 #define RISCV_FTYPE_ATYPES2(A, B, C) \
   RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C
+#define RISCV_FTYPE_ATYPES3(A, B, C, D) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D
+#define RISCV_FTYPE_ATYPES4(A, B, C, D, E) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D, \
+  RISCV_ATYPE_##E
+#define RISCV_FTYPE_ATYPES5(A, B, C, D, E, F) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D, \
+  RISCV_ATYPE_##E, RISCV_ATYPE_##F
+#define RISCV_FTYPE_ATYPES6(A, B, C, D, E, F, G) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D, \
+  RISCV_ATYPE_##E, RISCV_ATYPE_##F, RISCV_ATYPE_##G
+#define RISCV_FTYPE_ATYPES7(A, B, C, D, E, F, G, H) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D, \
+  RISCV_ATYPE_##E, RISCV_ATYPE_##F, RISCV_ATYPE_##G, RISCV_ATYPE_##H
+
 
 static const struct riscv_builtin_description riscv_builtins[] = {
   #include "riscv-builtins-crypto.def"
+  #include "riscv-builtins-rvp.def"
 
   DIRECT_BUILTIN (frflags, RISCV_USI_FTYPE, hard_float),
   DIRECT_NO_TARGET_BUILTIN (fsflags, RISCV_VOID_FTYPE_USI, hard_float)
@@ -195,6 +277,18 @@ riscv_build_function_type (enum riscv_function_type type)
 void
 riscv_init_builtins (void)
 {
+
+  if (TARGET_64BIT) 
+  {
+    int_xlen_node  = intDI_type_node;
+    uint_xlen_node = unsigned_intDI_type_node;
+  } 
+    else
+  {
+    int_xlen_node  = intSI_type_node;
+    uint_xlen_node = unsigned_intSI_type_node;
+  } 
+
   for (size_t i = 0; i < ARRAY_SIZE (riscv_builtins); i++)
     {
       const struct riscv_builtin_description *d = &riscv_builtins[i];
@@ -216,6 +310,56 @@ riscv_builtin_decl (unsigned int code, bool initialize_p ATTRIBUTE_UNUSED)
   if (code >= ARRAY_SIZE (riscv_builtins))
     return error_mark_node;
   return riscv_builtin_decls[code];
+}
+
+/* Take argument ARGNO from EXP's argument list and convert it into
+   an expand operand.  Store the operand in *OP.  In P extension, it
+   helps to make conversions from vectorized mode to constant mode, e.g.
+   v8qi to long */
+
+static void
+riscv_rvp_prepare_builtin_arg (struct expand_operand *op, tree exp, unsigned argno,
+			   enum insn_code icode, bool has_target_p)
+{
+  enum machine_mode mode = insn_data[icode].operand[argno + has_target_p].mode;
+  rtx arg = expand_normal (CALL_EXPR_ARG (exp, argno));
+  rtx tmp_rtx = gen_reg_rtx (mode);
+
+  if (!(*insn_data[icode].operand[argno + has_target_p].predicate) (arg, mode))
+    {
+      if (GET_MODE_SIZE (mode) < GET_MODE_SIZE (GET_MODE (arg)))
+	{
+	  tmp_rtx = simplify_gen_subreg (mode, arg, GET_MODE (arg), 0);
+	  arg = tmp_rtx;
+	}
+      else if (VECTOR_MODE_P (mode) && CONST_INT_P (arg))
+	{
+	  /* Handle CONST_INT covert to CONST_VECTOR.  */
+	  int nunits = GET_MODE_NUNITS (mode);
+	  int i, shift = 0;
+    
+	  rtvec v = rtvec_alloc (nunits);
+	  HOST_WIDE_INT val = INTVAL (arg);
+	  enum machine_mode val_mode = GET_MODE_INNER (mode);
+	  int shift_acc = GET_MODE_BITSIZE (val_mode);
+	  unsigned HOST_WIDE_INT mask = GET_MODE_MASK (val_mode);
+	  HOST_WIDE_INT tmp_val = val;
+	  for (i = 0; i < nunits; i++)
+	    {
+	      tmp_val = (val >> shift) & mask;
+	      RTVEC_ELT (v, i) = gen_int_mode (tmp_val, val_mode);
+	      shift += shift_acc;
+	    }
+
+	  arg = copy_to_mode_reg (mode, gen_rtx_CONST_VECTOR (mode, v));
+	}
+      else
+	{
+	  convert_move (tmp_rtx, arg, false);
+	  arg = tmp_rtx;
+	}
+    }
+  create_input_operand (op, arg, mode);
 }
 
 /* Take argument ARGNO from EXP's argument list and convert it into
@@ -267,9 +411,12 @@ riscv_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
   /* Map the arguments to the other operands.  */
   gcc_assert (opno + call_expr_nargs (exp)
 	      == insn_data[icode].n_generator_args);
-  for (int argno = 0; argno < call_expr_nargs (exp); argno++)
-    riscv_prepare_builtin_arg (&ops[opno++], exp, argno);
-
+  for (int argno = 0; argno < call_expr_nargs (exp); argno++){
+    if ( TARGET_ZPRV || TARGET_ZPN || TARGET_ZPSF )
+      riscv_rvp_prepare_builtin_arg (&ops[opno++], exp, argno, icode, has_target_p);
+    else
+      riscv_prepare_builtin_arg (&ops[opno++], exp, argno);
+  }
   return riscv_expand_builtin_insn (icode, opno, ops, has_target_p);
 }
 

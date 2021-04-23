@@ -1,3 +1,10 @@
+2021-04-23  Andes-tech <andestech@andestech.com>
+	Shao-Chung Wang <scwang@andestech.com>
+	Lin Sinan  <sinan@isrc.iscas.ac.cn>
+
+	* Andes-tech and Shao-Chung Wang add test cases for RISC-V 'p' extension with the spec version 0.51 
+	* Sinan Lin update the test cases
+
 2020-07-23  Release Manager
 
 	* GCC 10.2.0 released.

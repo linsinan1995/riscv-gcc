@@ -1,3 +1,11 @@
+2021-04-23  Andes-tech <andestech@andestech.com>
+	Shao-Chung Wang <scwang@andestech.com>
+	Lin Sinan  <sinan@isrc.iscas.ac.cn>
+
+	* Andes-tech and Shao-Chung Wang implement the RISC-V 'p' extension with the spec version 0.51 in gcc 7.6  
+	* Sinan Lin update the implementation to the spec version 0.93 in gcc 10.2
+	* add commit 0b7b4710111e and 4b81528241c for fixing configure option parsing error 
+
 2020-07-23  Release Manager
 
 	* GCC 10.2.0 released.

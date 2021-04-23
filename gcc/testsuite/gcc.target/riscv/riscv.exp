@@ -30,6 +30,11 @@ if ![info exists DEFAULT_CFLAGS] then {
     set DEFAULT_CFLAGS " -ansi -pedantic-errors"
 }
 
+global RVP_CFLAGS
+if ![info exists RVP_CFLAGS] then {
+    set RVP_CFLAGS ""
+}
+
 # Initialize `dg'.
 dg-init
 
@@ -37,5 +42,9 @@ dg-init
 dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] \
 	"" $DEFAULT_CFLAGS
 
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/rvp/*.\[cS\]]] \
+       "" $RVP_CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/rvp64/*.\[cS\]]] \
+       "" $RVP_CFLAGS
 # All done.
 dg-finish

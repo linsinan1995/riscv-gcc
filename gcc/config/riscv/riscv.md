@@ -119,7 +119,7 @@
   (const_string "unknown"))
 
 ;; Main data type used by the insn
-(define_attr "mode" "unknown,none,QI,HI,SI,DI,TI,SF,DF,TF"
+(define_attr "mode" "unknown,none,QI,HI,SI,DI,TI,SF,DF,TF,V2HI,V4HI,V8HI,V4QI,V8QI,V2SI,V4SI"
   (const_string "unknown"))
 
 ;; True if the main data type is twice the size of a word.
@@ -165,7 +165,9 @@
 (define_attr "type"
   "unknown,branch,jump,call,load,fpload,store,fpstore,
    mtc,mfc,const,arith,logical,shift,slt,imul,idiv,move,fmove,fadd,fmul,
-   fmadd,fdiv,fcmp,fcvt,fsqrt,multi,auipc,sfb_alu,nop,ghost"
+   fmadd,fdiv,fcmp,fcvt,fsqrt,multi,auipc,sfb_alu,nop,ghost,
+   dalu,dalu64,daluround,dcmp,dclip,dmul,dmac,dinsb,dpack,dbpick,dwext,
+   simd"
   (cond [(eq_attr "got" "load") (const_string "load")
 
 	 ;; If a doubleword move uses these expensive instructions,
@@ -387,7 +389,7 @@
 		     (le "") (leu "u")])
 
 ;; <su> is like <u>, but the signed form expands to "s" rather than "".
-(define_code_attr su [(sign_extend "s") (zero_extend "u")])
+(define_code_attr su [(ashiftrt "") (lshiftrt "u") (sign_extend "s") (zero_extend "u")])
 
 ;; <optab> expands to the name of the optab for a particular code.
 (define_code_attr optab [(ashift "ashl")
@@ -2499,6 +2501,8 @@
 )
 
 (include "crypto.md")
+(include "rvp.md")
+
 
 ;; This fixes a failure with gcc.c-torture/execute/pr64242.c at -O2 for a
 ;; 32-bit target when using -mtune=sifive-7-series.  The first sched pass

@@ -3406,6 +3406,20 @@ riscv_print_operand (FILE *file, rtx op, int letter)
         fputs ("i", file);
       break;
 
+    case 'v':
+      gcc_assert (CONST_INT_P (op)
+		  && (INTVAL (op) == 0
+		      || INTVAL (op) == 8
+		      || INTVAL (op) == 16
+		      || INTVAL (op) == 24
+		      || INTVAL (op) == 32
+		      || INTVAL (op) == 40
+		      || INTVAL (op) == 48
+		      || INTVAL (op) == 56));
+
+      fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (op) / 8);
+      break;
+
     default:
       switch (code)
 	{
@@ -5253,6 +5267,40 @@ riscv_new_address_profitable_p (rtx memref, rtx_insn *insn, rtx new_addr)
   return new_cost <= old_cost;
 }
 
+
+bool
+riscv_vector_mode_supported_p (enum machine_mode mode)
+{
+  if (mode == V4QImode
+      || mode == V2HImode)
+    return (TARGET_ZPRV || TARGET_ZPN || TARGET_ZPSF) && !TARGET_64BIT;
+
+  if (mode == V8QImode
+      || mode == V4HImode
+      || mode == V2SImode)
+    return (TARGET_ZPRV || TARGET_ZPN || TARGET_ZPSF) && TARGET_64BIT;
+
+  return false;
+}
+
+static enum machine_mode
+riscv_vectorize_preferred_simd_mode (scalar_mode mode)
+{
+  if (!(TARGET_ZPRV || TARGET_ZPN || TARGET_ZPSF))
+   return word_mode;
+
+  switch (mode)
+    {
+    case QImode:
+      return TARGET_64BIT ? V8QImode : V4QImode;
+    case HImode:
+      return TARGET_64BIT ? V4HImode : V2HImode;
+    case SImode:
+      return TARGET_64BIT ?V2SImode : word_mode;
+    default:
+      return word_mode;
+    }
+}
 /* Initialize the GCC target structure.  */
 #undef TARGET_ASM_ALIGNED_HI_OP
 #define TARGET_ASM_ALIGNED_HI_OP "\t.half\t"
@@ -5425,6 +5473,12 @@ riscv_new_address_profitable_p (rtx memref, rtx_insn *insn, rtx new_addr)
 
 #undef TARGET_WARN_FUNC_RETURN
 #define TARGET_WARN_FUNC_RETURN riscv_warn_func_return
+
+#undef TARGET_VECTOR_MODE_SUPPORTED_P
+#define TARGET_VECTOR_MODE_SUPPORTED_P riscv_vector_mode_supported_p
+
+#undef TARGET_VECTORIZE_PREFERRED_SIMD_MODE
+#define TARGET_VECTORIZE_PREFERRED_SIMD_MODE riscv_vectorize_preferred_simd_mode
 
 /* The low bit is ignored by jump instructions so is safe to use.  */
 #undef TARGET_CUSTOM_FUNCTION_DESCRIPTORS
