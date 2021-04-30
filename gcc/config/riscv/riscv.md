@@ -56,6 +56,9 @@
   UNSPEC_UKSUBW
   UNSPEC_UKADDH
   UNSPEC_UKSUBH
+  UNSPEC_BITREV
+  UNSPEC_CLO
+  UNSPEC_CMPEQ
 ])
 
 (define_c_enum "unspecv" [
@@ -76,6 +79,9 @@
   UNSPECV_BLOCKAGE
   UNSPECV_FENCE
   UNSPECV_FENCE_I
+
+  ;; RVP
+  UNSPEC_CLROV
 ])
 
 (define_constants
