@@ -160,6 +160,9 @@ TargetVariable
 int riscv_crypto_subext
 
 TargetVariable
+int riscv_rvp_subext
+
+TargetVariable
 int riscv_zi_subext
 
 Enum
