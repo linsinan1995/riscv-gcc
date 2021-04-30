@@ -48,6 +48,14 @@
 
   ;; rvp
   UNSPEC_KABS
+  UNSPEC_KADDW
+  UNSPEC_KSUBW
+  UNSPEC_KADDH
+  UNSPEC_KSUBH
+  UNSPEC_UKADDW
+  UNSPEC_UKSUBW
+  UNSPEC_UKADDH
+  UNSPEC_UKSUBH
 ])
 
 (define_c_enum "unspecv" [
@@ -460,7 +468,19 @@
   [(set_attr "type" "arith")
    (set_attr "mode" "SI")])
 
-(define_insn "adddi3"
+(define_expand "adddi3"
+  [(set (match_operand:DI          0 "register_operand" "")
+	(plus:DI (match_operand:DI 1 "register_operand" "")
+		 (match_operand:DI 2 "arith_operand"    "")))]
+  "TARGET_64BIT || TARGET_ZPSF"
+{
+  if (!TARGET_64BIT && !REG_P(operands[2]))
+    FAIL;
+  if (!TARGET_64BIT && REG_P(operands[2]))
+    emit_insn (gen_rvp_adddi3 (operands[0], operands[1], operands[2]));
+})
+
+(define_insn "*adddi3"
   [(set (match_operand:DI          0 "register_operand" "=r,r")
 	(plus:DI (match_operand:DI 1 "register_operand" " r,r")
 		 (match_operand:DI 2 "arith_operand"    " r,I")))]
@@ -507,7 +527,19 @@
   [(set_attr "type" "fadd")
    (set_attr "mode" "<UNITMODE>")])
 
-(define_insn "subdi3"
+(define_expand "subdi3"
+  [(set (match_operand:DI           0 "register_operand" "")
+	(minus:DI (match_operand:DI 1 "reg_or_0_operand" "")
+		  (match_operand:DI 2 "register_operand" "")))]
+  "TARGET_64BIT || TARGET_ZPSF"
+{
+  if (!TARGET_64BIT && !REG_P(operands[1]))
+    FAIL;
+  if (!TARGET_64BIT && REG_P(operands[1]))
+    emit_insn (gen_rvp_subdi3 (operands[0], operands[1], operands[2]));
+})
+
+(define_insn "*subdi3"
   [(set (match_operand:DI 0            "register_operand" "= r")
 	(minus:DI (match_operand:DI 1  "reg_or_0_operand" " rJ")
 		   (match_operand:DI 2 "register_operand" "  r")))]
