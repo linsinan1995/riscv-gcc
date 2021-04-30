@@ -40,6 +40,17 @@
 (define_code_iterator all_plus [plus ss_plus us_plus])
 (define_code_iterator all_minus [minus ss_minus us_minus])
 
+;; clz and clrs
+(define_code_iterator unop [clrsb clz])
+
+;; <rvp_optab> expands to the name of the optab for a particular code.
+(define_code_attr rvp_optab [(clrsb "clrsb") 
+       (clz "clz")])
+
+;; <rvp_insn> expands to the name of the insn that implements a particular code.
+(define_code_attr rvp_insn [(clrsb "clrs")
+			(clz "clz")])
+
 ;; k|(uk)|? add
 ;; zpn is a mandatory subset for p extension, thus add32 (zprv subset) can also be matched
 (define_insn "<uk>add<mode>3"
@@ -223,3 +234,127 @@
   [(set_attr "type"   "simd")
    (set_attr "mode" "<MODE>")])
 
+;; ave 
+(define_insn "ave"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(truncate:SI
+	  (ashiftrt:DI
+	    (plus:DI
+	      (plus:DI
+		(sign_extend:DI (match_operand:SI 1 "register_operand" "r"))
+		(sign_extend:DI (match_operand:SI 2 "register_operand" "r")))
+	      (const_int 1))
+	  (const_int 1))))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "ave\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "SI")])
+
+(define_insn "avedi"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(truncate:DI
+	  (ashiftrt:TI
+	    (plus:TI
+	      (plus:TI
+		(sign_extend:TI (match_operand:DI 1 "register_operand" "r"))
+		(sign_extend:TI (match_operand:DI 2 "register_operand" "r")))
+	      (const_int 1))
+	  (const_int 1))))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "ave\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "DI")])
+
+;; bitrev
+(define_insn "bitrev"
+  [(set (match_operand:SI 0 "register_operand"             "=r,   r")
+	(unspec:SI [(match_operand:SI 1 "register_operand" " r,   r")
+		    (match_operand:SI 2 "rimm5u_operand"   " r, u05")]
+		   UNSPEC_BITREV))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "@
+   bitrev\t%0, %1, %2
+   bitrevi\t%0, %1, %2"
+  [(set_attr "type"   "dsp")
+   (set_attr "mode"   "SI")])
+
+(define_insn "bitrev64"
+  [(set (match_operand:DI 0 "register_operand"             "=r,   r")
+	(unspec:DI [(match_operand:DI 1 "register_operand" " r,   r")
+		    (match_operand:SI 2 "rimm6u_operand"   " r, u06")]
+		   UNSPEC_BITREV))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "@
+   bitrev\t%0, %1, %2
+   bitrevi\t%0, %1, %2"
+  [(set_attr "type"   "dsp")
+   (set_attr "mode"   "SI")])
+
+;; bpick
+(define_insn "bpick<X:mode>"
+  [(set (match_operand:X 0 "register_operand"       "=r")
+	  (ior:X
+	    (and:X
+	      (match_operand:X 1 "register_operand" " r")
+	      (match_operand:X 3 "register_operand" " r"))
+	    (and:X
+	      (match_operand:X 2 "register_operand" " r")
+	      (not:X (match_dup 3)))))]
+  "TARGET_ZPN"
+  "bpick\t%0, %1, %2, %3"
+  [(set_attr "type"   "dsp")
+   (set_attr "mode"   "<MODE>")])
+
+;; clrov
+(define_insn "clrov<X:mode>"
+  [(unspec_volatile:X [(const_int 0)] UNSPEC_CLROV)]
+  "TARGET_ZPN"
+  "csrrci zero, vxsat, 1"
+  [(set_attr "mode" "<MODE>")])
+
+;; clrs, clz
+(define_insn "<rvp_optab><mode>2"
+  [(set (match_operand:VECI 0 "register_operand" "=r")
+        (unop:VECI (match_operand:VECI 1 "register_operand" "r")))]
+  "TARGET_ZPN"
+  "<rvp_insn><bits>\t%0, %1"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+(define_insn "<rvp_optab>si2"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (unop:SI (match_operand:SI 1 "register_operand" "r")))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "<rvp_insn>32\t%0, %1"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "SI")])
+
+;; clo
+(define_insn "clo<mode>2"
+  [(set (match_operand:VECI 0 "register_operand"               "=r")
+	(unspec:VECI [(match_operand:VECI 1 "register_operand" " r")]
+		      UNSPEC_CLO))]
+  "TARGET_ZPN"
+  "clo<bits>\t%0, %1"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+(define_insn "closi2"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+        (unspec:SI [(match_operand:SI 1 "register_operand" "r")]
+		    UNSPEC_CLO))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "clo32\t%0, %1"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "SI")])
+
+;; simd integer compare equal
+(define_insn "cmpeq<mode>"
+  [(set (match_operand:VQIHI 0 "register_operand"                          "=r")
+	(unspec:VQIHI [(eq:VQIHI (match_operand:VQIHI 1 "register_operand" " r")
+				 (match_operand:VQIHI 2 "register_operand" " r"))]
+		       UNSPEC_CMPEQ))]
+  "TARGET_ZPN"
+  "cmpeq<bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")]) 
