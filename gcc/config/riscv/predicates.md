@@ -212,3 +212,21 @@
 {
   return riscv_gpr_save_operation_p (op);
 })
+
+(define_predicate "register_even_operand"
+  (match_operand 0 "register_operand")
+{
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op); /* Possibly a MEM */
+
+  if (!REG_P (op))
+    return false;
+
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
+    return true;
+
+  return ((!TARGET_64BIT
+	   && GP_REG_P (REGNO (op))
+	   && (REGNO (op) & 1) == 0)
+	  || (TARGET_64BIT && GP_REG_P (REGNO (op))));
+})
