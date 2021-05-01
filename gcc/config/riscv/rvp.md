@@ -3667,3 +3667,70 @@
   "scmplt<bits>\t%0, %1, %2"
   [(set_attr "type" "simd")
    (set_attr "mode" "<MODE>")])
+
+;; SLL[i] 8|16|32 
+(define_expand "sll<mode>3"
+  [(set (match_operand:VQI 0 "register_operand"                "")
+	(ashift:VQI (match_operand:VQI 1 "register_operand" "")
+			(match_operand:SI 2 "rimm3u_operand" "")))]
+  "TARGET_ZPN"
+{
+  if (operands[2] == const0_rtx)
+    {
+      emit_move_insn (operands[0], operands[1]);
+      DONE;
+    }
+})
+
+(define_insn "*riscv_sll<mode>3"
+  [(set (match_operand:VQI 0 "register_operand"             "=  r, r")
+	(ashift:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+		     (match_operand:SI 2   "rimm3u_operand" " u03, r")))]
+  "TARGET_ZPN"
+  "@
+   slli8\t%0, %1, %2
+   sll8\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+;; SMAL
+(define_insn "smal"
+  [(set (match_operand:DI 0 "register_operand"             "=r")
+	(plus:DI (match_operand:DI 1 "register_operand"    " r")
+	  (sign_extend:DI
+	    (mult:SI
+	      (sign_extend:SI
+		(vec_select:HI
+		  (match_operand:V2HI 2 "register_operand" " r")
+		  (parallel [(const_int 0)])))
+	      (sign_extend:SI
+		(vec_select:HI
+		  (match_dup 2)
+		  (parallel [(const_int 1)])))))))]
+  "TARGET_ZPSF && !TARGET_64BIT"
+  "smal\t%0, %1, %2"
+  [(set_attr "type" "psimd")
+   (set_attr "mode" "DI")])
+
+(define_insn "smal_64"
+  [(set (match_operand:DI 0 "register_operand"             "=r")
+	(plus:DI (match_operand:DI 1 "register_operand"    " r")
+	  (plus:DI
+	    (sign_extend:DI
+	      (mult:SI
+		(sign_extend:SI
+		  (vec_select:HI
+		    (match_operand:V4HI 2 "register_operand" " r")
+		    (parallel [(const_int 0)])))
+		(sign_extend:SI
+		  (vec_select:HI (match_dup 2) (parallel [(const_int 1)])))))
+	    (sign_extend:DI
+	      (mult:SI
+		(sign_extend:SI
+		  (vec_select:HI (match_dup 2) (parallel [(const_int 2)])))
+		(sign_extend:SI
+		  (vec_select:HI (match_dup 2) (parallel [(const_int 3)]))))))))]
+  "TARGET_ZPSF && TARGET_64BIT"
+  "smal\t%0, %1, %2"
+  [(set_attr "type" "psimd")
+   (set_attr "mode" "DI")])
