@@ -73,6 +73,7 @@
   UNSPEC_KSLRAWU
   UNSPEC_PBSAD
   UNSPEC_PBSADA
+  UNSPEC_RDOV
 ])
 
 (define_c_enum "unspecv" [
