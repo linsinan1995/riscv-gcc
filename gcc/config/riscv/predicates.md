@@ -272,3 +272,8 @@
   (and (match_operand 0 "const_int_operand")
        (ior (match_test "satisfies_constraint_v02 (op)")
 	    (match_test "satisfies_constraint_v03 (op)"))))
+
+(define_predicate "imm_15_16_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (match_test "satisfies_constraint_v15 (op)")
+	    (match_test "satisfies_constraint_v16 (op)"))))
