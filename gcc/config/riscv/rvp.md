@@ -30,7 +30,9 @@
 
 (define_mode_attr VNHALF [(V2SI "SI") (V2HI "HI")])
 (define_mode_attr VSH_EXT [(V2SI "DI") (V2HI "HI")])
-
+(define_mode_attr VEXT [(V4QI "V4HI") (V2HI "V2SI") (V8QI "V8HI") (V4HI "V4SI")
+			(V2SI "V2DI")])
+			
 ;; <uk> expands to (un)signed (saturating) arithmetic operations
 (define_code_attr uk
   [(plus "") (ss_plus "k") (us_plus "uk")
@@ -43,6 +45,7 @@
 ;; <all_plus> and <all_minus> for all types of addtion and subtraction
 (define_code_iterator all_plus [plus ss_plus us_plus])
 (define_code_iterator all_minus [minus ss_minus us_minus])
+(define_code_iterator plus_minus [plus minus])
 
 ;; clz and clrs
 (define_code_iterator unop [clrsb clz])
@@ -54,6 +57,9 @@
 ;; <rvp_insn> expands to the name of the insn that implements a particular code.
 (define_code_attr rvp_insn [(clrsb "clrs")
 			(clz "clz")])
+
+(define_code_attr opcode
+  [(plus "add") (minus "sub")])
 
 ;; k|(uk)|? add
 ;; zpn is a mandatory subset for p extension, thus add32 (zprv subset) can also be matched
@@ -3256,3 +3262,159 @@
   "pktb16\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "V4HI")])
+   
+;; [U]RADD[8|16|32|64|W], [U]RSUB[8|16|32|64|W]
+(define_insn "radd<mode>3"
+  [(set (match_operand:VECI 0 "register_operand" "=r")
+	(truncate:VECI
+	  (ashiftrt:<VEXT>
+	    (plus:<VEXT> (sign_extend:<VEXT> (match_operand:VECI 1 "register_operand" " r"))
+			 (sign_extend:<VEXT> (match_operand:VECI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN"
+  "radd<bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+;; radd64
+(define_insn "radddi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(truncate:DI
+	  (ashiftrt:TI
+	    (plus:TI (sign_extend:TI (match_operand:DI 1 "register_operand" " r"))
+		     (sign_extend:TI (match_operand:DI 2 "register_operand" " r")))
+	  (const_int 1))))]
+  "TARGET_ZPSF"
+  "radd64\t%0, %1, %2"
+  [(set_attr "type" "dsp64")
+   (set_attr "mode" "DI")])
+
+(define_insn "uradd<mode>3"
+  [(set (match_operand:VECI 0 "register_operand" "=r")
+	(truncate:VECI
+	  (lshiftrt:<VEXT>
+	    (plus:<VEXT> (zero_extend:<VEXT> (match_operand:VECI 1 "register_operand" " r"))
+			 (zero_extend:<VEXT> (match_operand:VECI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN"
+  "uradd<bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+;; uradd64
+(define_insn "uradddi3"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(truncate:DI
+	  (lshiftrt:TI
+	    (plus:TI (zero_extend:TI (match_operand:DI 1 "register_operand" " r"))
+		     (zero_extend:TI (match_operand:DI 2 "register_operand" " r")))
+	  (const_int 1))))]
+  "TARGET_ZPSF"
+  "uradd64\t%0, %1, %2"
+  [(set_attr "type" "dsp64")
+   (set_attr "mode" "DI")])
+
+(define_insn "rsub<mode>3"
+  [(set (match_operand:VECI 0 "register_operand"                                   "=r")
+	(truncate:VECI
+	  (ashiftrt:<VEXT>
+	    (minus:<VEXT> (sign_extend:<VEXT> (match_operand:VECI 1 "register_operand" " r"))
+			  (sign_extend:<VEXT> (match_operand:VECI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN"
+  "rsub<bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+(define_insn "ursub<mode>3"
+  [(set (match_operand:VECI 0 "register_operand"                                   "=r")
+	(truncate:VECI
+	  (ashiftrt:<VEXT>
+	    (minus:<VEXT> (zero_extend:<VEXT> (match_operand:VECI 1 "register_operand" " r"))
+			  (zero_extend:<VEXT> (match_operand:VECI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN"
+  "ursub<bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<MODE>")])
+
+;; rsub64
+(define_insn "rsubdi3"
+  [(set (match_operand:DI 0 "register_operand"                   "=r")
+	(truncate:DI
+	  (ashiftrt:TI
+	    (minus:TI (sign_extend:TI (match_operand:DI 1 "register_operand" " r"))
+		      (sign_extend:TI (match_operand:DI 2 "register_operand" " r")))
+	  (const_int 1))))]
+  "TARGET_ZPSF"
+  "rsub64\t%0, %1, %2"
+  [(set_attr "type" "dsp64")
+   (set_attr "mode" "DI")])
+
+;; ursub64
+(define_insn "ursubdi3"
+  [(set (match_operand:DI 0 "register_operand"                   "=r")
+	(truncate:DI
+	  (lshiftrt:TI
+	    (minus:TI (zero_extend:TI (match_operand:DI 1 "register_operand" " r"))
+		      (zero_extend:TI (match_operand:DI 2 "register_operand" " r")))
+	  (const_int 1))))]
+  "TARGET_ZPSF"
+  "ursub64\t%0, %1, %2"
+  [(set_attr "type" "dsp64")
+   (set_attr "mode" "DI")])
+
+;; 32-bit add/sub instruction: raddw and rsubw.
+(define_insn "r<opcode>si3"
+  [(set (match_operand:SI 0 "register_operand"                       "=r")
+	(truncate:SI
+	  (ashiftrt:DI
+	    (plus_minus:DI
+	      (sign_extend:DI (match_operand:SI 1 "register_operand" " r"))
+	      (sign_extend:DI (match_operand:SI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "r<opcode>w\t%0, %1, %2"
+  [(set_attr "type" "dsp")])
+
+;; 64-bit add/sub instruction: raddw and rsubw.
+(define_insn "r<opcode>disi3"
+  [(set (match_operand:DI 0 "register_operand"                       "=r")
+	(sign_extend:DI
+	  (truncate:SI
+	    (ashiftrt:DI
+	      (plus_minus:DI
+		(sign_extend:DI (match_operand:SI 1 "register_operand" " r"))
+		(sign_extend:DI (match_operand:SI 2 "register_operand" " r")))
+	      (const_int 1)))))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "r<opcode>w\t%0, %1, %2"
+  [(set_attr "type" "dsp")])
+
+;; 32-bit add/sub instruction: uraddw and ursubw.
+(define_insn "ur<opcode>si3"
+  [(set (match_operand:SI 0 "register_operand"                       "=r")
+	(truncate:SI
+	  (lshiftrt:DI
+	    (plus_minus:DI
+	      (zero_extend:DI (match_operand:SI 1 "register_operand" " r"))
+	      (zero_extend:DI (match_operand:SI 2 "register_operand" " r")))
+	    (const_int 1))))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "ur<opcode>w\t%0, %1, %2"
+  [(set_attr "type" "dsp")])
+
+;; 64-bit add/sub instruction: uraddw and ursubw.
+(define_insn "ur<opcode>disi3"
+  [(set (match_operand:DI 0 "register_operand"                       "=r")
+	(sign_extend:DI
+	  (truncate:SI
+	    (lshiftrt:DI
+	      (plus_minus:DI
+		(zero_extend:DI (match_operand:SI 1 "register_operand" " r"))
+		(zero_extend:DI (match_operand:SI 2 "register_operand" " r")))
+	      (const_int 1)))))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "ur<opcode>w\t%0, %1, %2"
+  [(set_attr "type" "dsp")])
+
