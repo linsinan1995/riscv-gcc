@@ -29,6 +29,8 @@
 
 (define_mode_attr VNHALF [(V2SI "SI") (V2HI "HI")])
 (define_mode_attr VSH_EXT [(V2SI "DI") (V2HI "HI")])
+(define_mode_attr VECI_scalar [(V2SI "SI") (V2HI "HI") (V4HI "HI")
+                            (V4QI "QI") (V8QI "QI")])
 
 ;; <uk> expands to (un)signed (saturating) arithmetic operations
 (define_code_attr uk
@@ -2698,3 +2700,113 @@
    kmmwb2\t%0, %1, %2
    kmmwt2\t%0, %1, %2"
   [(set_attr "type" "simd")])
+;; KSLLW
+(define_insn "ksll"
+  [(set (match_operand:SI 0 "register_operand"               "=   r, r")
+	(ss_ashift:SI (match_operand:SI 1 "register_operand" "    r, r")
+		      (match_operand:SI 2 "rimm5u_operand"   " Iu05, r")))]
+  "TARGET_ZPN"
+  "@
+   kslliw\t%0, %1, %2
+   ksllw\t%0, %1, %2"
+  [(set_attr "type"  "dsp")
+   (set_attr "mode"  "SI")])
+
+;; KSLL8
+(define_insn "kslli8<VQI:mode><X:mode>"
+  [(set (match_operand:VQI 0 "register_operand"                "=  r, r")
+	(ss_ashift:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+		       (match_operand:X 2   "rimm3u_operand"   " u03, r")))]
+  "TARGET_ZPN"
+  "@
+   kslli8\t%0, %1, %2
+   ksll8\t%0, %1, %2"
+  [(set_attr "type"  "simd, simd")
+   (set_attr "mode"  "<VQI:MODE>, <VQI:MODE>")])
+
+;; KSLL16
+(define_insn "kslli16<mode>"
+  [(set (match_operand:VHI 0 "register_operand"                "=  r, r")
+	(ss_ashift:VHI (match_operand:VHI 1 "register_operand" "   r, r")
+		       (match_operand:SI 2  "rimm4u_operand"   " u04, r")))]
+  "TARGET_ZPN"
+  "@
+   kslli16\t%0, %1, %2
+   ksll16\t%0, %1, %2"
+  [(set_attr "type"  "simd, simd")
+   (set_attr "mode"  "<MODE>, <MODE>")])
+
+;; KSLRA8
+(define_insn "kslra<VECI:mode><X:mode>"
+  [(set (match_operand:VECI 0 "register_operand"                  "=r")
+	(if_then_else:VECI
+	  (lt:X
+	    (sign_extend:SI
+		  (truncate:<VECI_scalar>
+		    (match_operand:SI 2 "register_operand"              " r")))
+		(const_int 0))
+	  (ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
+			 (neg:X (match_dup 2)))
+	  (ss_ashift:VECI (match_dup 1)
+			  (match_dup 2))))]
+  "TARGET_ZPN"
+  "kslra<VECI:bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<VECI:MODE>")])
+
+(define_insn "kslra<VECI:mode><X:mode>_round"
+  [(set (match_operand:VECI 0 "register_operand"                  "=r")
+	(if_then_else:VECI
+	  (lt:X
+	    (sign_extend:SI
+		  (truncate:<VECI_scalar>
+		    (match_operand:SI 2 "register_operand"                     " r")))
+		(const_int 0))
+	  (unspec:VECI [(ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
+				       (neg:X (match_dup 2)))]
+		        UNSPEC_ROUND)
+	  (ss_ashift:VECI (match_dup 1)
+			  (match_dup 2))))]
+  "TARGET_ZPN"
+  "kslra<VECI:bits>.u\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<VECI:MODE>")])
+
+;; kslraw
+(define_insn "kslraw"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
+		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_KSLRAW))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "kslraw\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "SI")])
+
+(define_insn "kslraw64"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(sign_extend:DI
+	  (unspec:SI [(match_operand:SI 1 "register_operand" "r")
+		      (match_operand:SI 2 "register_operand" "r")] UNSPEC_KSLRAW)))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "kslraw\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "DI")])
+
+(define_insn "kslrawu"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
+		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_KSLRAWU))]
+  "TARGET_ZPN && !TARGET_64BIT"
+  "kslraw.u\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "SI")])
+
+(define_insn "kslrawu64"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(sign_extend:DI
+	  (unspec:SI [(match_operand:SI 1 "register_operand" "r")
+		      (match_operand:SI 2 "register_operand" "r")] UNSPEC_KSLRAWU)))]
+  "TARGET_ZPN && TARGET_64BIT"
+  "kslraw.u\t%0, %1, %2"
+  [(set_attr "type" "dsp")
+   (set_attr "mode" "DI")])
