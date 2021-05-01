@@ -91,3 +91,38 @@
   "Unsigned immediate 6-bit value"
   (and (match_code "const_int")
        (match_test "ival < (1 << 6) && ival >= 0")))
+
+(define_constraint "v00"
+  "Constant value 1"
+  (and (match_code "const_int")
+       (match_test "ival == 0")))
+
+(define_constraint "v01"
+  "Constant value 1"
+  (and (match_code "const_int")
+       (match_test "ival == 1")))
+
+(define_constraint "v02"
+  "Constant value 2"
+  (and (match_code "const_int")
+       (match_test "ival == 2")))
+
+(define_constraint "v03"
+  "Constant value 3"
+  (and (match_code "const_int")
+       (match_test "ival == 3")))
+
+(define_constraint "v04"
+  "Constant value 4"
+  (and (match_code "const_int")
+       (match_test "ival == 4")))
+
+(define_constraint "v08"
+  "Constant value 8"
+  (and (match_code "const_int")
+       (match_test "ival == 8")))
+
+(define_constraint "D07"
+  "A constraint that matches the integers 2^(0...7)."
+  (and (match_code "const_int")
+       (match_test "(unsigned) exact_log2 (ival) <= 7")))
