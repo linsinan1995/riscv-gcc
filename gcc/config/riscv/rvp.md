@@ -32,7 +32,8 @@
 (define_mode_attr VSH_EXT [(V2SI "DI") (V2HI "HI")])
 (define_mode_attr VEXT [(V4QI "V4HI") (V2HI "V2SI") (V8QI "V8HI") (V4HI "V4SI")
 			(V2SI "V2DI")])
-			
+(define_code_attr shift [(ashift "ashl") (ashiftrt "ashr") (lshiftrt "lshr")])
+
 ;; <uk> expands to (un)signed (saturating) arithmetic operations
 (define_code_attr uk
   [(plus "") (ss_plus "k") (us_plus "uk")
@@ -3610,31 +3611,6 @@
   [(set_attr "type" "simd")
    (set_attr "mode" "<MODE>")])
 
-;; SLL[i] 8|16|32 
-(define_expand "riscv_sll<mode>3"
-  [(set (match_operand:VQI 0 "register_operand"                "")
-	(ashift:VQI (match_operand:VQI 1 "register_operand" "")
-			(match_operand:SI 2 "rimm3u_operand" "")))]
-  "TARGET_ZPN"
-{
-  if (operands[2] == const0_rtx)
-    {
-      emit_move_insn (operands[0], operands[1]);
-      DONE;
-    }
-})
-
-(define_insn "*riscv_sll<mode>3"
-  [(set (match_operand:VQI 0 "register_operand"             "=  r, r")
-	(ashift:VQI (match_operand:VQI 1 "register_operand" "   r, r")
-		     (match_operand:SI 2   "rimm3u_operand" " u03, r")))]
-  "TARGET_ZPN"
-  "@
-   slli8\t%0, %1, %2
-   sll8\t%0, %1, %2"
-  [(set_attr "type" "simd, simd")
-   (set_attr "mode" "<MODE>, <MODE>")])
-
 ;; SMAL
 (define_insn "riscv_smal"
   [(set (match_operand:DI 0 "register_even_operand"             "=r")
@@ -5348,3 +5324,139 @@
   "umulx16\t%0, %1, %2"
   [(set_attr "type" "simd")
    (set_attr "mode" "DI")])
+
+;; SRA[I] 8|16|32, SRL[I] 8|16|32, SLL[I] 8|16|32
+(define_expand "riscv_<shift><mode>3"
+  [(set (match_operand:VQI 0 "register_operand"                "")
+	(any_shift:VQI (match_operand:VQI 1 "register_operand" "")
+			(match_operand:SI 2 "rimm3u_operand" "")))]
+  "TARGET_ZPN"
+{
+  if (operands[2] == const0_rtx)
+    {
+      emit_move_insn (operands[0], operands[1]);
+      DONE;
+    }
+})
+
+;; ashrv4qi3 for SRA[I]8 in RV32P
+;; ashrv8qi3 for SRA[I]8 in RV64P
+;; ashrv2hi3 for SRA[I]16 in RV32P
+;; ashrv4hi3 for SRA[I]16 in RV64P
+;; ashrv2si3 for SRA[I]32 (RV64P only)
+(define_insn "*riscv_ashr<mode>3"
+  [(set (match_operand:VQI 0 "register_operand"               "=  r, r")
+	(ashiftrt:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+		       (match_operand:SI 2 "rimm3u_operand"   " u03, r")))]
+  "TARGET_ZPN"
+  "@
+   srai8\t%0, %1, %2
+   sra8\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+;; lshrv4qi3 for SRL[I]8 in RV32P
+;; lshrv8qi3 for SRL[I]8 in RV64P
+;; lshrv2hi3 for SRL[I]16 in RV32P
+;; lshrv4hi3 for SRL[I]16 in RV64P
+;; lshrv2si3 for SRL[I]32 (RV64P only)
+(define_insn "*riscv_lshr<mode>3"
+  [(set (match_operand:VQI 0 "register_operand"               "=  r, r")
+	(lshiftrt:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+		       (match_operand:SI 2 "rimm3u_operand"   " u03, r")))]
+  "TARGET_ZPN"
+  "@
+   srli8\t%0, %1, %2
+   srl8\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+;; ashlv4qi3 for SLL[I]8 in RV32P
+;; ashlv8qi3 for SLL[I]8 in RV64P
+;; ashlv2hi3 for SLL[I]16 in RV32P
+;; ashlv4hi3 for SLL[I]16 in RV64P
+;; ashlv2si3 for SLL[I]32 (RV64P only)
+(define_insn "*riscv_ashl<mode>3"
+  [(set (match_operand:VQI 0 "register_operand"             "=  r, r")
+	(ashift:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+		     (match_operand:SI 2   "rimm3u_operand" " u03, r")))]
+  "TARGET_ZPN"
+  "@
+   slli8\t%0, %1, %2
+   sll8\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+;; SRA[I] 8|16|32 .u
+(define_insn "riscv_sra8_round<mode>"
+  [(set (match_operand:VQI 0 "register_operand"                            "=  r, r")
+	(unspec:VQI [(ashiftrt:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+				   (match_operand:SI 2  "rimm3u_operand"   " u03, r"))]
+		      UNSPEC_ROUND))]
+  "TARGET_ZPN"
+  "@
+   srai8.u\t%0, %1, %2
+   sra8.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+(define_insn "riscv_sra16_round<mode>"
+  [(set (match_operand:VHI 0 "register_operand"                            "=  r, r")
+	(unspec:VHI [(ashiftrt:VHI (match_operand:VHI 1 "register_operand" "   r, r")
+				   (match_operand:SI 2  "rimm4u_operand"   " u04, r"))]
+		     UNSPEC_ROUND))]
+  "TARGET_ZPN"
+  "@
+   srai16.u\t%0, %1, %2
+   sra16.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+(define_insn "riscv_sra32_round"
+  [(set (match_operand:V2SI 0 "register_operand"                              "=  r, r")
+	(unspec:V2SI [(ashiftrt:V2SI (match_operand:V2SI 1 "register_operand" "   r, r")
+				     (match_operand:SI 2   "rimm5u_operand"   " u05, r"))]
+		       UNSPEC_ROUND))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "@
+   srai32.u\t%0, %1, %2
+   sra32.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "V2SI,  V2SI")])
+
+;; SRL[I] 8|16|32 .u
+(define_insn "riscv_srl8_round<mode>"
+  [(set (match_operand:VQI 0 "register_operand"                            "=  r, r")
+	(unspec:VQI [(lshiftrt:VQI (match_operand:VQI 1 "register_operand" "   r, r")
+				   (match_operand:SI 2  "rimm3u_operand"   " u03, r"))]
+		      UNSPEC_ROUND))]
+  "TARGET_ZPN"
+  "@
+   srli8.u\t%0, %1, %2
+   srl8.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+(define_insn "riscv_srl16_round<mode>"
+  [(set (match_operand:VHI 0 "register_operand"                            "=  r, r")
+	(unspec:VHI [(lshiftrt:VHI (match_operand:VHI 1 "register_operand" "   r, r")
+				   (match_operand:SI 2  "rimm4u_operand"   " u04, r"))]
+		     UNSPEC_ROUND))]
+  "TARGET_ZPN"
+  "@
+   srli16.u\t%0, %1, %2
+   srl16.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "<MODE>, <MODE>")])
+
+(define_insn "riscv_srl32_round"
+  [(set (match_operand:V2SI 0 "register_operand"                              "=  r, r")
+	(unspec:V2SI [(lshiftrt:V2SI (match_operand:V2SI 1 "register_operand" "   r, r")
+				     (match_operand:SI 2   "rimm5u_operand"   " u05, r"))]
+		       UNSPEC_ROUND))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "@
+   srli32.u\t%0, %1, %2
+   srl32.u\t%0, %1, %2"
+  [(set_attr "type" "simd, simd")
+   (set_attr "mode" "V2SI,  V2SI")])
