@@ -33,7 +33,8 @@
 (define_mode_attr VSH_EXT [(V2SI "DI") (V2HI "HI")])
 (define_mode_attr VEXT [(V4QI "V4HI") (V2HI "V2SI") (V8QI "V8HI") (V4HI "V4SI")
 			(V2SI "V2DI")])
-			
+(define_code_attr shift [(ashift "ashl") (ashiftrt "ashr") (lshiftrt "lshr")])
+
 ;; <uk> expands to (un)signed (saturating) arithmetic operations
 (define_code_attr uk
   [(plus "") (ss_plus "k") (us_plus "uk")
@@ -57,11 +58,17 @@
 
 ;; <rvp_optab> expands to the name of the optab for a particular code.
 (define_code_attr rvp_optab [(clrsb "clrsb") 
-       (clz "clz")])
+	(clz "clz")
+	(ashift "ashl")
+	(ashiftrt "ashr")
+	(lshiftrt "lshr")])
 
 ;; <rvp_insn> expands to the name of the insn that implements a particular code.
 (define_code_attr rvp_insn [(clrsb "clrs")
-			(clz "clz")])
+			(clz "clz")
+			(ashift "sll")
+			(ashiftrt "sra")
+			(lshiftrt "srl")])
 
 (define_code_attr opcode [(plus "add") 
    (minus "sub")
@@ -3675,31 +3682,6 @@
   "scmplt<bits>\t%0, %1, %2"
   [(set_attr "type" "simd")
    (set_attr "mode" "<MODE>")])
-
-;; SLL[i] 8|16|32 
-(define_expand "sll<mode>3"
-  [(set (match_operand:VQI 0 "register_operand"                "")
-	(ashift:VQI (match_operand:VQI 1 "register_operand" "")
-			(match_operand:SI 2 "rimm3u_operand" "")))]
-  "TARGET_ZPN"
-{
-  if (operands[2] == const0_rtx)
-    {
-      emit_move_insn (operands[0], operands[1]);
-      DONE;
-    }
-})
-
-(define_insn "*riscv_sll<mode>3"
-  [(set (match_operand:VQI 0 "register_operand"             "=  r, r")
-	(ashift:VQI (match_operand:VQI 1 "register_operand" "   r, r")
-		     (match_operand:SI 2   "rimm3u_operand" " u03, r")))]
-  "TARGET_ZPN"
-  "@
-   slli8\t%0, %1, %2
-   sll8\t%0, %1, %2"
-  [(set_attr "type" "simd, simd")
-   (set_attr "mode" "<MODE>, <MODE>")])
 
 ;; SMAL
 (define_insn "smal"
