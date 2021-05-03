@@ -2865,7 +2865,7 @@
   [(set_attr "type"  "simd, simd")
    (set_attr "mode"  "<MODE>, <MODE>")])
 
-;; KSLRA8
+;; KSLRA 8|16|32
 (define_insn "kslra<VECI:mode><X:mode>"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
@@ -2880,6 +2880,7 @@
   [(set_attr "type" "simd")
    (set_attr "mode" "<VECI:MODE>")])
 
+;; kslra32.u kslrav2sidi_round
 (define_insn "kslra<VECI:mode><X:mode>_round"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
@@ -2934,42 +2935,43 @@
   [(set_attr "type" "dsp")
    (set_attr "mode" "DI")])
 
-;; KSTAS16, KSTSA16
-(define_expand "kstasv2hi"
-  [(match_operand:V2HI 0 "register_operand" "")
-   (match_operand:V2HI 1 "register_operand" "")
-   (match_operand:V2HI 2 "register_operand" "")]
-  "TARGET_ZPN && TARGET_64BIT"
+;; KSTAS16|32, KSTSA16|32
+(define_expand "kstas<mode>"
+  [(match_operand:VSHI 0 "register_operand" "")
+   (match_operand:VSHI 1 "register_operand" "")
+   (match_operand:VSHI 2 "register_operand" "")]
+  "TARGET_ZPN"
 {
-  emit_insn (gen_kstasv2hi_le (operands[0], operands[1], operands[2]));
+  emit_insn (gen_kstas<mode>_le (operands[0], operands[1], operands[2]));
   DONE;
 }
 [(set_attr "type" "simd")])
 
-(define_insn "kstasv2hi_le"
-  [(set (match_operand:V2HI 0 "register_operand"         "=r")
-	(vec_merge:V2HI
-	  (vec_duplicate:V2HI
-	    (ss_minus:HI
-	      (vec_select:HI
-		(match_operand:V2HI 1 "register_operand" " r")
+(define_insn "kstas<mode>_le"
+  [(set (match_operand:VSHI 0 "register_operand"         "=r")
+	(vec_merge:VSHI
+	  (vec_duplicate:VSHI
+	    (ss_minus:<VNHALF>
+	      (vec_select:<VNHALF>
+		(match_operand:VSHI 1 "register_operand" " r")
 		(parallel [(const_int 0)]))
-	      (vec_select:HI
-		(match_operand:V2HI 2 "register_operand" " r")
+	      (vec_select:<VNHALF>
+		(match_operand:VSHI 2 "register_operand" " r")
 		(parallel [(const_int 0)]))))
-	  (vec_duplicate:V2HI
-	    (ss_plus:HI
-	      (vec_select:HI
+	  (vec_duplicate:VSHI
+	    (ss_plus:<VNHALF>
+	      (vec_select:<VNHALF>
 		(match_dup 2)
 		(parallel [(const_int 1)]))
-	      (vec_select:HI
+	      (vec_select:<VNHALF>
 		(match_dup 1)
 		(parallel [(const_int 1)]))))
 	  (const_int 1)))]
-  "TARGET_ZPN && !TARGET_64BIT"
-  "kstas16\t%0, %1, %2"
+  "TARGET_ZPN"
+  "kstas<bits>\t%0, %1, %2"
   [(set_attr "type" "simd")]
 )
+
 ;; rv64
 (define_expand "kstas16_64"
   [(match_operand:V4HI 0 "register_operand" "")
@@ -3002,39 +3004,39 @@
   [(set_attr "type" "simd")
    (set_attr "mode" "V4HI")])
 
-(define_expand "kstsav2hi"
-  [(match_operand:V2HI 0 "register_operand" "")
-   (match_operand:V2HI 1 "register_operand" "")
-   (match_operand:V2HI 2 "register_operand" "")]
-  "TARGET_ZPN && !TARGET_64BIT"
+(define_expand "kstsa<mode>"
+  [(match_operand:VSHI 0 "register_operand" "")
+   (match_operand:VSHI 1 "register_operand" "")
+   (match_operand:VSHI 2 "register_operand" "")]
+  "TARGET_ZPN"
 {
-  emit_insn (gen_kstsav2hi_le (operands[0], operands[1], operands[2]));
+  emit_insn (gen_kstsa<mode>_le (operands[0], operands[1], operands[2]));
   DONE;
 }
 [(set_attr "type" "simd")])
 
-(define_insn "kstsav2hi_le"
-  [(set (match_operand:V2HI 0 "register_operand"         "=r")
-	(vec_merge:V2HI
-	  (vec_duplicate:V2HI
-	    (ss_minus:HI
-	      (vec_select:HI
-		(match_operand:V2HI 1 "register_operand" " r")
+(define_insn "kstsa<mode>_le"
+  [(set (match_operand:VSHI 0 "register_operand"         "=r")
+	(vec_merge:VSHI
+	  (vec_duplicate:VSHI
+	    (ss_minus:<VNHALF>
+	      (vec_select:<VNHALF>
+		(match_operand:VSHI 1 "register_operand" " r")
 		(parallel [(const_int 0)]))
-	      (vec_select:HI
-		(match_operand:V2HI 2 "register_operand" " r")
+	      (vec_select:<VNHALF>
+		(match_operand:VSHI 2 "register_operand" " r")
 		(parallel [(const_int 0)]))))
-	  (vec_duplicate:V2HI
-	    (ss_plus:HI
-	      (vec_select:HI
+	  (vec_duplicate:VSHI
+	    (ss_plus:<VNHALF>
+	      (vec_select:<VNHALF>
 		(match_dup 1)
 		(parallel [(const_int 1)]))
-	      (vec_select:HI
+	      (vec_select:<VNHALF>
 		(match_dup 2)
 		(parallel [(const_int 1)]))))
 	  (const_int 2)))]
-  "TARGET_ZPN && !TARGET_64BIT"
-  "kstsa16\t%0, %1, %2"
+  "TARGET_ZPN"
+  "kstsa<bits>\t%0, %1, %2"
   [(set_attr "type" "simd")]
 )
 
@@ -4274,8 +4276,8 @@
   [(set_attr "type" "dsp64")
    (set_attr "mode" "DI")])
 
-;; [U]SMAX 8|16  and [U]SMIN 8|16
-;; smax[8|16] and umax[8|16]
+;; [U]SMAX 8|16|32  and [U]SMIN 8|16|32
+;; smax 8|16|32 and umax 8|16|32
 (define_insn "<opcode><mode>3"
   [(set (match_operand:VECI 0 "register_operand"             "=r")
 	(sumax:VECI (match_operand:VECI 1 "register_operand" " r")
@@ -4284,7 +4286,7 @@
   "<opcode><bits>\t%0, %1, %2"
   [(set_attr "type" "simd")])
 
-;; smin[8|16] and umin[8|16]
+;; smin 8|16|32 and umin 8|16|32
 (define_insn "<opcode><mode>3"
   [(set (match_operand:VECI 0 "register_operand"             "=r")
 	(sumin:VECI (match_operand:VECI 1 "register_operand" " r")
@@ -6872,3 +6874,132 @@
   "TARGET_ZPRV && TARGET_64BIT"
   "kmxda32\t%0, %1, %2"
   [(set_attr "type" "dsp")])
+
+;; KMADS32, KMADRS32, KMAXDS32
+(define_insn "kmads32"
+  [(set (match_operand:DI 0 "register_operand"                           "=r")
+	(ss_plus:DI
+	  (match_operand:DI 1 "register_operand"                         " 0")
+	  (ss_minus:DI
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 2 "register_operand" " r")
+				(parallel [(const_int 1)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 3 "register_operand" " r")
+				(parallel [(const_int 1)]))))
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 2)
+				(parallel [(const_int 0)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 3)
+				(parallel [(const_int 0)])))))))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "kmads32\t%0, %2, %3"
+  [(set_attr "type" "dsp")])
+
+(define_insn "kmadrs32"
+  [(set (match_operand:DI 0 "register_operand"                           "=r")
+	(ss_plus:DI
+	  (match_operand:DI 1 "register_operand"                         " 0")
+	  (ss_minus:DI
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 2 "register_operand" " r")
+				(parallel [(const_int 0)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 3 "register_operand" " r")
+				(parallel [(const_int 0)]))))
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 2)
+				(parallel [(const_int 1)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 3)
+				(parallel [(const_int 1)])))))))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "kmadrs32\t%0, %2, %3"
+  [(set_attr "type" "dsp")])
+
+(define_insn "kmaxds32"
+  [(set (match_operand:DI 0 "register_operand"                           "=r")
+	(ss_plus:DI
+	  (match_operand:DI 1 "register_operand"                         " 0")
+	  (ss_minus:DI
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 2 "register_operand" " r")
+				(parallel [(const_int 1)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 3 "register_operand" " r")
+				(parallel [(const_int 0)]))))
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 2)
+				(parallel [(const_int 0)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 3)
+				(parallel [(const_int 1)])))))))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "kmaxds32\t%0, %2, %3"
+  [(set_attr "type" "dsp")])
+
+;; KMSDA32, KMSXDA32
+(define_insn "kmsda32"
+  [(set (match_operand:DI 0 "register_operand"                           "=r")
+	(ss_minus:DI
+	  (match_operand:DI 1 "register_operand"                         " 0")
+	  (ss_minus:DI
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 2 "register_operand" " r")
+				(parallel [(const_int 1)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 3 "register_operand" " r")
+				(parallel [(const_int 1)]))))
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 2)
+				(parallel [(const_int 0)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 3)
+				(parallel [(const_int 0)])))))))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "kmsda32\t%0, %2, %3"
+  [(set_attr "type" "dsp")])
+
+(define_insn "kmsxda32"
+  [(set (match_operand:DI 0 "register_operand"                           "=r")
+	(ss_minus:DI
+	  (match_operand:DI 1 "register_operand"                         " 0")
+	  (ss_minus:DI
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 2 "register_operand" " r")
+				(parallel [(const_int 1)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_operand:V2SI 3 "register_operand" " r")
+				(parallel [(const_int 0)]))))
+	    (mult:DI
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 2)
+				(parallel [(const_int 0)])))
+	      (sign_extend:DI (vec_select:SI
+				(match_dup 3)
+				(parallel [(const_int 1)])))))))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "kmsxda32\t%0, %2, %3"
+  [(set_attr "type" "dsp")])
+
+;; KSLL32, KSLLI32
+(define_insn "ksll32"
+  [(set (match_operand:V2SI 0 "register_operand"                 "=  r, r")
+	(ss_ashift:V2SI (match_operand:V2SI 1 "register_operand" "   r, r")
+			(match_operand:SI 2   "rimm5u_operand"   " u05, r")))]
+  "TARGET_ZPRV && TARGET_64BIT"
+  "@
+   kslli32\t%0, %1, %2
+   ksll32\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "V2SI")])
