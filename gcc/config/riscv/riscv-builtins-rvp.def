@@ -19,3 +19,4 @@ along with GCC; see the file COPYING3.  If not see
 
 /* kabs */
 RVP_DIRECT_BUILTIN (kabsw, kabsw, RISCV_USI_FTYPE_USI, zpn),
+

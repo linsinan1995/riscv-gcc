@@ -97,6 +97,7 @@
   UNSPEC_KHMBB16
   UNSPEC_KHMBT16
   UNSPEC_KHMTT16
+  UNSPEC_ROUND64
 ])
 
 (define_c_enum "unspecv" [
