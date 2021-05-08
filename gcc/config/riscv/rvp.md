@@ -6166,22 +6166,6 @@
   [(set_attr "type"  "dsp")
    (set_attr "mode"  "V8QI")])
 
-(define_insn "riscv_bswap16"
-  [(set (match_operand:V2HI 0 "register_operand" "=r")
-	(unspec:V2HI [(match_operand:V2HI 1 "register_operand" "r")] UNSPEC_BSWAP))]
-  "TARGET_ZPN"
-  "swap16\t%0, %1"
-  [(set_attr "type"  "dsp")
-   (set_attr "mode"  "V2HI")])
-
-(define_insn "riscv_bswap16_64"
-  [(set (match_operand:V4HI 0 "register_operand" "=r")
-	(unspec:V4HI [(match_operand:V4HI 1 "register_operand" "r")] UNSPEC_BSWAP))]
-  "TARGET_ZPN"
-  "swap16\t%0, %1"
-  [(set_attr "type"  "dsp")
-   (set_attr "mode"  "V4HI")])
-
 ;; UCLIP8|16|32
 (define_insn "riscv_uclip8<mode>"
   [(set (match_operand:VQI 0 "register_operand"               "=  r")
@@ -7228,3 +7212,42 @@
    sra.u\t%0, %1, %2"
   [(set_attr "type"   "simd")
    (set_attr "mode"   "DI")])
+
+;; move pattern
+(define_expand "mov<mode>"
+  [(set (match_operand:VQIHI 0 "")
+	(match_operand:VQIHI 1 ""))]
+  "TARGET_ZPN"
+{
+  if (riscv_legitimize_move (<MODE>mode, operands[0], operands[1]))
+    DONE;
+})
+
+(define_insn "*mov<mode>_internal"
+  [(set (match_operand:VQIHI 0 "nonimmediate_operand" "=r,r,r, m,  *f,*f,*r,*m")
+	(match_operand:VQIHI 1 "move_operand"         " r,T,m,rJ,*r*J,*m,*f,*f"))]
+  "(register_operand (operands[0], <MODE>mode)
+    || reg_or_0_operand (operands[1], <MODE>mode))
+   && TARGET_ZPN "
+  { return riscv_output_move (operands[0], operands[1]); }
+  [(set_attr "move_type" "move,const,load,store,mtc,fpload,mfc,fpstore")
+   (set_attr "mode" "<MODE>")])
+
+(define_expand "movv2si"
+  [(set (match_operand:V2SI 0 "")
+	(match_operand:V2SI 1 ""))]
+  "TARGET_64BIT && TARGET_ZPN "
+{
+  if (riscv_legitimize_move (V2SImode, operands[0], operands[1]))
+    DONE;
+})
+
+(define_insn "*movv2si_64bit"
+  [(set (match_operand:V2SI 0 "nonimmediate_operand" "=r,r,r, m,  *f,*f,*r,*f,*m")
+	(match_operand:V2SI 1 "move_operand"         " r,T,m,rJ,*r*J,*m,*f,*f,*f"))]
+  "TARGET_64BIT && TARGET_ZPN 
+   && (register_operand (operands[0], V2SImode)
+       || reg_or_0_operand (operands[1], V2SImode))"
+  { return riscv_output_move (operands[0], operands[1]); }
+  [(set_attr "move_type" "move,const,load,store,mtc,fpload,mfc,fmove,fpstore")
+   (set_attr "mode" "V2SI")])
