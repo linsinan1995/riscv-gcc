@@ -45,6 +45,13 @@ riscv_cpu_cpp_builtins (cpp_reader *pfile)
   if (TARGET_ATOMIC)
     builtin_define ("__riscv_atomic");
 
+  if (TARGET_ZPN)
+    builtin_define ("__riscv_zpn");
+  if (TARGET_ZPSF)
+    builtin_define ("__riscv_zpsf");
+  if (TARGET_ZPRV)
+    builtin_define ("__riscv_zprv");
+
   if (TARGET_MUL)
     builtin_define ("__riscv_mul");
   if (TARGET_DIV)
