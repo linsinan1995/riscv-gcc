@@ -1505,12 +1505,6 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
   (__builtin_riscv_v64_smdrs32 ((a), (b)))
 #define __riscv__v_smxds32(a, b) \
   (__builtin_riscv_v64_smxds32 ((a), (b)))
-#define __riscv__v_kdmabb(r, a, b) \
-  (__builtin_riscv_v64_kdmabb ((r), (a), (b)))
-#define __riscv__v_kdmabt(r, a, b) \
-  (__builtin_riscv_v64_kdmabt ((r), (a), (b)))
-#define __riscv__v_kdmatt(r, a, b) \
-  (__builtin_riscv_v64_kdmatt ((r), (a), (b)))
 #define __riscv__v_kdmabb16(r, a, b) \
   (__builtin_riscv_v64_kdmabb16 ((r), (a), (b)))
 #define __riscv__v_kdmabt16(r, a, b) \
