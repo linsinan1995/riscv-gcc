@@ -21,6 +21,9 @@
 (define_mode_iterator VECI [(V4QI "!TARGET_64BIT") (V2HI "!TARGET_64BIT")
                             (V8QI "TARGET_64BIT") (V4HI "TARGET_64BIT")
 			                      (V2SI "TARGET_64BIT")])
+;; v2hi is also used in rv64p
+(define_mode_iterator VPMOVE [(V4QI "") (V2HI "")
+                             (V8QI "TARGET_64BIT")  (V4HI "TARGET_64BIT")])
 (define_mode_iterator VQIHI [(V4QI "!TARGET_64BIT") (V2HI "!TARGET_64BIT")
                              (V8QI "TARGET_64BIT")  (V4HI "TARGET_64BIT")])
 (define_mode_iterator VSHI [(V2HI "!TARGET_64BIT") (V2SI "TARGET_64BIT")])
