@@ -31,9 +31,11 @@ along with GCC; see the file COPYING3.  If not see
 //Zcea - BEQ (RV32 && RV64)
 
 //Zcea - NOT (RV32 && RV64)
+   RISCV_BUILTIN(c_not_si, "c_not", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_QI, zce_zcea32),
+   RISCV_BUILTIN(c_not_di, "c_not", RISCV_BUILTIN_DIRECT, RISCV_DI_FTYPE_QI, zce_zcea64),
+   RISCV_BUILTIN(c_neg_si, "c_neg", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_QI, zce_zcea32),
+   RISCV_BUILTIN(c_neg_di, "c_neg", RISCV_BUILTIN_DIRECT, RISCV_DI_FTYPE_QI, zce_zcea64),
 
+    //Zcea - TABJ (RV32 && RV64)
 
-//Zcea - TABJ (RV32 && RV64)
-
-
-//Zceb - C_L (RV32 && RV64)
+    //Zceb - C_L (RV32 && RV64)
