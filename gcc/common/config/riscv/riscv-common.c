@@ -68,6 +68,9 @@ riscv_implied_info_t riscv_implied_info[] =
   {"zks", "zksh"},
   {"zks", "zkg"},
   {"zks", "zkb"},
+  {"zce", "zcee"},
+  {"zce", "zcea"},
+  {"zce", "zceb"},
   {NULL, NULL}
 };
 
@@ -832,6 +835,10 @@ static const riscv_ext_flag_table_t riscv_ext_flag_table[] =
   {"zknh", &gcc_options::x_riscv_crypto_subext, MASK_ZKNH},
   {"zksed", &gcc_options::x_riscv_crypto_subext, MASK_ZKSED},
   {"zksh", &gcc_options::x_riscv_crypto_subext, MASK_ZKSH},
+
+  {"zcea", &gcc_options::x_riscv_zce_subext, MASK_ZCEA},
+  {"zcee", &gcc_options::x_riscv_zce_subext, MASK_ZCEE},
+  {"zceb", &gcc_options::x_riscv_zce_subext, MASK_ZCEB},
 
   {NULL, NULL, 0}
 };

@@ -56,6 +56,9 @@ LONG_EXT_PREFIXES = ['z', 's', 'h', 'x']
 #
 IMPLIED_EXT = {
   "d" : ["f"],
+  "zce" : ["zcea"],
+  "zce" : ["zcee"],
+  "zce" : ["zceb"],
 }
 
 def arch_canonicalize(arch):
