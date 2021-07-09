@@ -2499,6 +2499,7 @@
 )
 
 (include "crypto.md")
+(include "zce.md")
 
 ;; This fixes a failure with gcc.c-torture/execute/pr64242.c at -O2 for a
 ;; 32-bit target when using -mtune=sifive-7-series.  The first sched pass

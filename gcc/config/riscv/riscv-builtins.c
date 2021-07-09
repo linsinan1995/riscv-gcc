@@ -41,7 +41,7 @@ along with GCC; see the file COPYING3.  If not see
 #define RISCV_FTYPE_NAME0(A) RISCV_##A##_FTYPE
 #define RISCV_FTYPE_NAME1(A, B) RISCV_##A##_FTYPE_##B
 #define RISCV_FTYPE_NAME2(A, B, C) RISCV_##A##_FTYPE_##B##_##C
-
+#define RISCV_FTYPE_NAME3(A, B, C, D) RISCV_##A##_FTYPE_##B##_##C##_##D
 /* Classifies the prototype of a built-in function.  */
 enum riscv_function_type {
 #define DEF_RISCV_FTYPE(NARGS, LIST) RISCV_FTYPE_NAME##NARGS LIST,
@@ -103,6 +103,12 @@ AVAIL (crypto_zksed64, TARGET_ZKSED && TARGET_64BIT)
 AVAIL (crypto_zkr32, TARGET_ZKR && !TARGET_64BIT)
 AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
 
+AVAIL (zce_zcea32, TARGET_ZCEA && !TARGET_64BIT)
+AVAIL (zce_zcea64, TARGET_ZCEA && TARGET_64BIT)
+AVAIL (zce_zcee32, TARGET_ZCEE && !TARGET_64BIT)
+AVAIL (zce_zcee64, TARGET_ZCEE && TARGET_64BIT)
+AVAIL (zce_zceb32, TARGET_ZCEB && !TARGET_64BIT)
+AVAIL (zce_zceb64, TARGET_ZCEB && TARGET_64BIT)
 /* Construct a riscv_builtin_description from the given arguments.
 
    INSN is the name of the associated instruction pattern, without the
@@ -137,6 +143,8 @@ AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
 #define RISCV_ATYPE_USI unsigned_intSI_type_node
 #define RISCV_ATYPE_SI intSI_type_node
 #define RISCV_ATYPE_DI intDI_type_node
+#define RISCV_ATYPE_QI intQI_type_node
+#define RISCV_ATYPE_HI intHI_type_node
 
 /* RISCV_FTYPE_ATYPESN takes N RISCV_FTYPES-like type codes and lists
    their associated RISCV_ATYPEs.  */
@@ -146,10 +154,13 @@ AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
   RISCV_ATYPE_##A, RISCV_ATYPE_##B
 #define RISCV_FTYPE_ATYPES2(A, B, C) \
   RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C
+#define RISCV_FTYPE_ATYPES3(A, B, C, D) \
+  RISCV_ATYPE_##A, RISCV_ATYPE_##B, RISCV_ATYPE_##C, RISCV_ATYPE_##D
 
 static const struct riscv_builtin_description riscv_builtins[] = {
   #include "riscv-builtins-crypto.def"
-
+  #include "riscv-builtins-zce.def"
+  
   DIRECT_BUILTIN (frflags, RISCV_USI_FTYPE, hard_float),
   DIRECT_NO_TARGET_BUILTIN (fsflags, RISCV_VOID_FTYPE_USI, hard_float)
 };
