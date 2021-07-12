@@ -17,6 +17,53 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
+;;ZCEE ZEXT
+(define_insn "riscv_c_zext_h_si"
+  [(set (match_operand:SI		  0 "register_operand" "=r")
+	(zero_extend:SI (match_operand:HI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "zexth\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "HI")]
+)
+
+(define_insn "riscv_c_zext_h_di"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(zero_extend:DI (match_operand:HI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "zexth\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "HI")]
+)
+
+(define_insn "riscv_c_zext_b_si"
+  [(set (match_operand:SI		  0 "register_operand" "=r")
+	(zero_extend:SI (match_operand:QI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "zextb\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "QI")]
+)
+
+(define_insn "riscv_c_zext_b_di"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(zero_extend:DI (match_operand:QI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "zextb\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "QI")]
+)
+
+(define_insn "riscv_c_zext_w"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(zero_extend:DI (match_operand:SI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sextw\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "DI")]
+)
+
+
 ;;ZCEA NOT && NEG
 (define_insn "riscv_c_not_<mode>"
   [(set (match_operand:X         0 "register_operand" "=r")
