@@ -109,6 +109,32 @@
    (set_attr "mode" "DI")]
 )
 
+;;ZCEE C.MUL
+(define_insn "riscv_c_mul_<mode>"
+  [(set (match_operand:X                       0 "register_operand" "=r")
+	(sign_extend:X
+	  (subreg:QI (mult:QI (match_operand:DI 1 "register_operand" " r")
+			      (match_operand:DI 2 "register_operand" " r"))
+		     0)))]
+  "TARGET_ZCEE"
+  "c.mul\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "QI")])
+
+;;ZCEA MULI
+
+(define_insn "riscv_muli_<mode>"
+  [(set (match_operand:X                       0 "register_operand" "=r")
+	(sign_extend:X
+	  (subreg:QI (mult:QI (match_operand:DI 1 "register_operand" " r")
+			      (match_operand:DI 2 "immediate_operand" " i"))
+		     0)))]
+  "TARGET_ZCEA"
+  "c.mul\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "QI")])
+
+
 ;;ZCEA NOT && NEG
 (define_insn "riscv_c_not_<mode>"
   [(set (match_operand:X         0 "register_operand" "=r")

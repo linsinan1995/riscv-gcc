@@ -31,8 +31,13 @@ along with GCC; see the file COPYING3.  If not see
    DIRECT_BUILTIN(c_zext_h_di, RISCV_DI_FTYPE_HI, zce_zcee64),
    DIRECT_BUILTIN(c_zext_w, RISCV_DI_FTYPE_SI, zce_zcee64),
 
-   //Zcea - MUL (RV32 && RV64)
+   //ZCEE - C.MUL
+   RISCV_BUILTIN(c_mul_si, "c_mul", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_SI_SI, zce_zcee32),
+   RISCV_BUILTIN(c_mul_di, "c_mul", RISCV_BUILTIN_DIRECT, RISCV_DI_FTYPE_DI_DI, zce_zcee64),
 
+   //Zcea - MULI (RV32 && RV64)
+   RISCV_BUILTIN(muli_si, "muli", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_SI_SI, zce_zcea32),
+   RISCV_BUILTIN(muli_di, "muli", RISCV_BUILTIN_DIRECT, RISCV_DI_FTYPE_DI_DI, zce_zcea64),
 
 
    //Zcea - BEQ (RV32 && RV64)
