@@ -17,20 +17,27 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
-//Zcee - SEXT (RV32 && RV64)
+   //Zcee - SEXT (RV32 && RV64)
+   DIRECT_BUILTIN(c_sext_b_si, RISCV_SI_FTYPE_QI, zce_zcee32),
+   DIRECT_BUILTIN(c_sext_b_di, RISCV_DI_FTYPE_QI, zce_zcee64),
+   DIRECT_BUILTIN(c_sext_h_si, RISCV_SI_FTYPE_HI, zce_zcee32),
+   DIRECT_BUILTIN(c_sext_h_di, RISCV_DI_FTYPE_HI, zce_zcee64),
+   DIRECT_BUILTIN(c_sext_w, RISCV_DI_FTYPE_SI, zce_zcee64),
 
-//Zcee - ZEXT (RV32 && RV64)
+   //Zcee - ZEXT (RV32 && RV64)
+   DIRECT_BUILTIN(c_zext_b_si, RISCV_SI_FTYPE_QI, zce_zcee32),
+   DIRECT_BUILTIN(c_zext_b_di, RISCV_DI_FTYPE_QI, zce_zcee64),
+   DIRECT_BUILTIN(c_zext_h_si, RISCV_SI_FTYPE_HI, zce_zcee32),
+   DIRECT_BUILTIN(c_zext_h_di, RISCV_DI_FTYPE_HI, zce_zcee64),
+   DIRECT_BUILTIN(c_zext_w, RISCV_DI_FTYPE_SI, zce_zcee64),
 
-//Zcee - .w (RV64)
-
-
-//Zcea - MUL (RV32 && RV64)
+   //Zcea - MUL (RV32 && RV64)
 
 
 
-//Zcea - BEQ (RV32 && RV64)
+   //Zcea - BEQ (RV32 && RV64)
 
-//Zcea - NOT (RV32 && RV64)
+   //Zcea - NOT (RV32 && RV64)
    RISCV_BUILTIN(c_not_si, "c_not", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_QI, zce_zcea32),
    RISCV_BUILTIN(c_not_di, "c_not", RISCV_BUILTIN_DIRECT, RISCV_DI_FTYPE_QI, zce_zcea64),
    RISCV_BUILTIN(c_neg_si, "c_neg", RISCV_BUILTIN_DIRECT, RISCV_SI_FTYPE_QI, zce_zcea32),

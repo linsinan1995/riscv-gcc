@@ -58,11 +58,56 @@
   [(set (match_operand:DI		  0 "register_operand" "=r")
 	(zero_extend:DI (match_operand:SI 1 "register_operand" "r")))]
   "TARGET_ZCEE"
-  "sextw\t%0, %1"
+  "zextw\t%0, %1"
   [(set_attr "type" "arith")
    (set_attr "mode" "DI")]
 )
 
+;;ZCEE SEXT
+(define_insn "riscv_c_sext_h_si"
+  [(set (match_operand:SI		  0 "register_operand" "=r")
+	(sign_extend:SI (match_operand:HI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sexth\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "HI")]
+)
+
+(define_insn "riscv_c_sext_h_di"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(sign_extend:DI (match_operand:HI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sexth\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "HI")]
+)
+
+(define_insn "riscv_c_sext_b_si"
+  [(set (match_operand:SI		  0 "register_operand" "=r")
+	(sign_extend:SI (match_operand:QI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sextb\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "QI")]
+)
+
+(define_insn "riscv_c_sext_b_di"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(sign_extend:DI (match_operand:QI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sextb\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "QI")]
+)
+
+(define_insn "riscv_c_sext_w"
+  [(set (match_operand:DI		  0 "register_operand" "=r")
+	(sign_extend:DI (match_operand:SI 1 "register_operand" "r")))]
+  "TARGET_ZCEE"
+  "sextw\t%0, %1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "DI")]
+)
 
 ;;ZCEA NOT && NEG
 (define_insn "riscv_c_not_<mode>"
