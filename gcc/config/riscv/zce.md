@@ -168,3 +168,32 @@
   "TARGET_ZCEA"
   "PUSH\t%0"
   )
+
+;;ZCEA BEQ、BNE
+(define_insn "*beq"
+  [(set (pc)
+        (if_then_else (eq:SI (match_operand:SI 0 "reg_or_0_operand" "rJ")
+                             (match_operand:SI 1 "reg_or_0_operand" "rJ"))
+                      (label_ref (match_operand 2 "" ""))
+                      (pc)))]
+  "TARGET_ZCEA"
+{
+  return get_attr_length (insn) == 4
+        ? "beqi     %z0,%z1,%2"
+        : "bnei    %z0,%z1,8\n\tbi     %2";
+}  
+  [(set_attr "type" "branch")])
+
+(define_insn "*bne"
+  [(set (pc)
+        (if_then_else (ne:SI (match_operand:SI 0 "reg_or_0_operand" "rJ")
+                             (match_operand:SI 1 "reg_or_0_operand" "rJ"))
+                      (label_ref (match_operand 2 "" ""))
+                      (pc)))]
+  "TARGET_ZCEA"
+{
+  return get_attr_length (insn) == 4
+        ? "bnei    %z0,%z1,%2"
+        : "beqi     %z0,%z1,8\n\tbi     %2";
+}  
+  [(set_attr "type" "branch")])
