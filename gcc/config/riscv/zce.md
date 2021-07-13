@@ -151,3 +151,20 @@
   "neg\t%0,%1"
   [(set_attr "type" "arith")
    (set_attr "mode" "SI")])
+
+
+;;ZCEA  POP
+(define_insn "pop"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(mem:HI (post_inc:HI (reg:HI S2_REGNUM))))]
+  "TARGET_ZCEA"
+  "POP\t%0"
+  )
+
+;;ZCEA  PUSH
+(define_insn "push"
+  [(set (mem:HI (pre_dec:HI (reg:HI S2_REGNUM)))
+	(match_operand:HI 0 "register_operand" "r"))]
+  "TARGET_ZCEA"
+  "PUSH\t%0"
+  )
