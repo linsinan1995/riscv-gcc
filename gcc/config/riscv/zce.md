@@ -44,16 +44,16 @@
 
 (define_insn "riscv_c_zext_b_si"
   [(set (match_operand:SI		  0 "register_operand" "=r")
-	      (unspec::SI(zero_extend:SI 
-                    (match_operand:QI 1 "register_operand" "r"))
+	      (unspec:SI[(zero_extend:SI 
+                    (match_operand:QI 1 "register_operand" "r"))]
                     UNSPEC_ZCEE_SEXTB))]
   "TARGET_ZCEE && !TARGET_64BIT"
   "zextb\t%0, %1")
 
 (define_insn "riscv_c_zext_b_di"
   [(set (match_operand:DI		  0 "register_operand" "=r")
-	      (unspec::DI(zero_extend:DI 
-                    (match_operand:QI 1 "register_operand" "r"))
+	      (unspec:DI[(zero_extend:DI 
+                    (match_operand:QI 1 "register_operand" "r"))]
                     UNSPEC_ZCEE_SEXTB))]
   "TARGET_ZCEE && TARGET_64BIT"
   "zextb\t%0, %1")
