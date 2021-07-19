@@ -105,11 +105,11 @@ static inline long _rv_zext_h (long rs1) { return _rv32_sext_h(rs1); }
 #ifdef RVINTRIN_RV64
 static inline long _rv_sext_b (long rs1) { return _rv64_sext_b(rs1); }
 static inline long _rv_sext_h (long rs1) { return _rv64_sext_h(rs1); }
-static inline long _rv_sext_w (long rs1) { return _rv_sext_w(rs1); }
+static inline long _rv_sext_w (long rs1) { return _rv64_sext_w(rs1); }
 
 static inline long _rv_zext_b (long rs1) { return _rv64_sext_b(rs1); }
 static inline long _rv_zext_h (long rs1) { return _rv64_sext_h(rs1); }
-static inline long _rv_zext_w (long rs1) { return _rv_zext_w(rs1); }
+static inline long _rv_zext_w (long rs1) { return _rv64_zext_w(rs1); }
 #endif
 
 #endif // !ZCE_INTRIN_H
