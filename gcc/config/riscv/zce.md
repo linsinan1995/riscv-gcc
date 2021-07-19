@@ -57,7 +57,7 @@
   "zext.h\t%0,%1"
   [(set_attr "type" "zce")])
 
-(define_insn "*zero_extendsidi2_bitmanip"
+(define_insn "*zero_extendsidi2_zce"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(zero_extend:DI (match_operand:SI 1 "nonimmediate_operand" "r")))]
   "TARGET_64BIT && TARGET_ZCEE"
@@ -65,16 +65,15 @@
   [(set_attr "type" "zce")])
 
 ;;ZCEE C.MUL
-(define_insn "riscv_c_mul_<mode>"
-  [(set (match_operand:X                       0 "register_operand" "=r")
-	(sign_extend:X
-	  (subreg:QI (mult:QI (match_operand:DI 1 "register_operand" " r")
+(define_insn "*cmul<GPR:mode>"
+  [(set (match_operand:GPR                       0 "register_operand" "=r")
+	(sign_extend:GPR
+	  (subreg:HI (mult:HI (match_operand:DI 1 "register_operand" " r")
 			      (match_operand:DI 2 "register_operand" " r"))
 		     0)))]
   "TARGET_ZCEE"
   "c.mul\t%0,%1,%2"
-  [(set_attr "type" "imul")
-   (set_attr "mode" "QI")])
+  [(set_attr "type" "zce")]
 
 ;;ZCEA MULI
 
