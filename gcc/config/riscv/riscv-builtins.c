@@ -159,7 +159,6 @@ AVAIL (zce_zceb64, TARGET_ZCEB && TARGET_64BIT)
 
 static const struct riscv_builtin_description riscv_builtins[] = {
   #include "riscv-builtins-crypto.def"
-  #include "riscv-builtins-zce.def"
   
   DIRECT_BUILTIN (frflags, RISCV_USI_FTYPE, hard_float),
   DIRECT_NO_TARGET_BUILTIN (fsflags, RISCV_VOID_FTYPE_USI, hard_float)
