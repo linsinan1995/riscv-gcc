@@ -65,9 +65,9 @@
   [(set_attr "type" "zce")])
 
 ;;ZCEE C.MUL
-(define_insn "*cmul<GPR:mode>"
-  [(set (match_operand:GPR                       0 "register_operand" "=r")
-	(sign_extend:GPR
+(define_insn "riscv_c_mul_<mode>"
+  [(set (match_operand:X                       0 "register_operand" "=r")
+	(sign_extend:X
 	  (subreg:HI (mult:HI (match_operand:DI 1 "register_operand" " r")
 			      (match_operand:DI 2 "register_operand" " r"))
 		     0)))]
