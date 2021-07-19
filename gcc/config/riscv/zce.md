@@ -49,32 +49,23 @@
   [(set_attr "type" "zce, load")])
 
 ;;ZCEE ZEXT
-(define_insn "*zero_extendqi<GPR:mode>2_zce"
-  [(set (match_operand:GPR 0 "register_operand" "=r,r")
-	(zero_extend:GPR (match_operand:QI 1 "nonimmediate_operand" "r,m")))]
-  "TARGET_ZCEE"
-  "@
-  zext.b\t%0,%1
-  lbu\t%0,%1"
-  [(set_attr "type" "zce, load")])
-
 (define_insn "*zero_extendhi<GPR:mode>2_zce"
-  [(set (match_operand:GPR 0 "register_operand" "=r,m")
+  [(set (match_operand:GPR 0 "register_operand" "=r,r")
 	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand" "r,m")))]
   "TARGET_ZCEE"
   "@
-  zext.h\t%0,%1
-  lhu\t%0,%1"
-  [(set_attr "type" "zce, load")])
+   zext.h\t%0,%1
+   lhu\t%0,%1"
+  [(set_attr "type" "zce,load")])
 
 (define_insn "*zero_extendsidi2_zce"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
 	(zero_extend:DI (match_operand:SI 1 "nonimmediate_operand" "r,m")))]
-  "TARGET_64BIT && TARGET_ZCEE"
+  "TARGET_64BIT && TARGET_ZCE"
   "@
-  zext.w\t%0,%1
-  lwu\t%0,%1"
-  [(set_attr "type" "zce, load")])
+   zext.w\t%0,%1
+   lwu\t%0,%1"
+  [(set_attr "type" "zce,load")])
 
 ;;ZCEE C.MUL
 (define_insn "riscv_c_mul_<mode>"
