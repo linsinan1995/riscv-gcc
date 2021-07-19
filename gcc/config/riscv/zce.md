@@ -17,101 +17,52 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
-(define_c_enum "unspec" [
-  ;; ZCE extension unspecs.
-  UNSPEC_ZCEE_SEXTB
-])
 
 
-;;ZCEE ZEXT
-(define_insn "riscv_c_zext_h_si"
-  [(set (match_operand:SI		  0 "register_operand" "=r")
-	(zero_extend:SI (match_operand:HI 1 "register_operand" "r")))]
-  "TARGET_ZCEE"
-  "zexth\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "HI")]
-)
-
-(define_insn "riscv_c_zext_h_di"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	(zero_extend:DI (match_operand:HI 1 "register_operand" "r")))]
-  "TARGET_ZCEE"
-  "zexth\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "HI")]
-)
-
-(define_insn "riscv_c_zext_b_si"
-  [(set (match_operand:SI		  0 "register_operand" "=r")
-	      (unspec:SI[(zero_extend:SI 
-                    (match_operand:QI 1 "register_operand" "r"))]
-                    UNSPEC_ZCEE_SEXTB))]
-  "TARGET_ZCEE && !TARGET_64BIT"
-  "zextb\t%0, %1")
-
-(define_insn "riscv_c_zext_b_di"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	      (unspec:DI[(zero_extend:DI 
-                    (match_operand:QI 1 "register_operand" "r"))]
-                    UNSPEC_ZCEE_SEXTB))]
-  "TARGET_ZCEE && TARGET_64BIT"
-  "zextb\t%0, %1")
-
-(define_insn "riscv_c_zext_w"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	(zero_extend:DI (match_operand:SI 1 "register_operand" "r")))]
-  "TARGET_ZCEE"
-  "zextw\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "DI")]
-)
 
 ;;ZCEE SEXT
-(define_insn "riscv_c_sext_h_si"
-  [(set (match_operand:SI		  0 "register_operand" "=r")
-	(sign_extend:SI (match_operand:HI 1 "register_operand" "r")))]
+(define_insn "*sign_extendqi<GPR:mode>2_zce"
+  [(set (match_operand:GPR 0 "register_operand" "=r")
+	(sign_extend:GPR (match_operand:QI 1 "nonimmediate_operand" "r")))]
   "TARGET_ZCEE"
-  "sexth\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "HI")]
-)
+  "sext.h\t%0,%1"
+  [(set_attr "type" "zce")])
 
-(define_insn "riscv_c_sext_h_di"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	(sign_extend:DI (match_operand:HI 1 "register_operand" "r")))]
+(define_insn "*sign_extendhi<GPR:mode>2_zce"
+  [(set (match_operand:GPR 0 "register_operand" "=r")
+	(sign_extend:GPR (match_operand:HI 1 "nonimmediate_operand" "r")))]
   "TARGET_ZCEE"
-  "sexth\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "HI")]
-)
+  "sext.h\t%0,%1"
+  [(set_attr "type" "zce")])
 
-(define_insn "riscv_c_sext_b_si"
-  [(set (match_operand:SI		  0 "register_operand" "=r")
-	(sign_extend:SI (match_operand:QI 1 "register_operand" "r")))]
-  "TARGET_ZCEE"
-  "sextb\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "QI")]
-)
+(define_insn "*sign_extendsidi2_zce"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(sign_extend:DI (match_operand:SI 1 "nonimmediate_operand" "r")))]
+  "TARGET_64BIT && TARGET_ZCEE"
+  "sext.w\t%0,%1"
+  [(set_attr "type" "zce")])
 
-(define_insn "riscv_c_sext_b_di"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	(sign_extend:DI (match_operand:QI 1 "register_operand" "r")))]
+;;ZCEE ZEXT
+(define_insn "*zero_extendqi<GPR:mode>2_zce"
+  [(set (match_operand:GPR 0 "register_operand" "=r")
+	(zero_extend:GPR (match_operand:QI 1 "nonimmediate_operand" "r")))]
   "TARGET_ZCEE"
-  "sextb\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "QI")]
-)
+  "zext.h\t%0,%1"
+  [(set_attr "type" "zce")])
 
-(define_insn "riscv_c_sext_w"
-  [(set (match_operand:DI		  0 "register_operand" "=r")
-	(sign_extend:DI (match_operand:SI 1 "register_operand" "r")))]
+(define_insn "*zero_extendhi<GPR:mode>2_zce"
+  [(set (match_operand:GPR 0 "register_operand" "=r")
+	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand" "r")))]
   "TARGET_ZCEE"
-  "sextw\t%0, %1"
-  [(set_attr "type" "arith")
-   (set_attr "mode" "DI")]
-)
+  "zext.h\t%0,%1"
+  [(set_attr "type" "zce")])
+
+(define_insn "*zero_extendsidi2_bitmanip"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(zero_extend:DI (match_operand:SI 1 "nonimmediate_operand" "r")))]
+  "TARGET_64BIT && TARGET_ZCEE"
+  "zext.w\t%0,%1"
+  [(set_attr "type" "zce")])
 
 ;;ZCEE C.MUL
 (define_insn "riscv_c_mul_<mode>"
@@ -201,3 +152,5 @@
         : "beqi     %z0,%z1,8\n\tbi     %2";
 }  
   [(set_attr "type" "branch")])
+
+
