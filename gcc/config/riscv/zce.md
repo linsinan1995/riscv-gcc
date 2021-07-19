@@ -68,12 +68,13 @@
 (define_insn "riscv_c_mul_<mode>"
   [(set (match_operand:X                       0 "register_operand" "=r")
 	(sign_extend:X
-	  (subreg:HI (mult:HI (match_operand:DI 1 "register_operand" " r")
+	  (subreg:QI (mult:QI (match_operand:DI 1 "register_operand" " r")
 			      (match_operand:DI 2 "register_operand" " r"))
 		     0)))]
   "TARGET_ZCEE"
   "c.mul\t%0,%1,%2"
-  [(set_attr "type" "zce")]
+  [(set_attr "type" "imul")
+   (set_attr "mode" "QI")])
 
 ;;ZCEA MULI
 
