@@ -21,7 +21,7 @@
 
 
 ;;ZCEE SEXT
-(define_insn "*sign_extendqi<GPR:mode>2_zce"
+(define_insn "sign_extendqi<GPR:mode>2_zce"
   [(set (match_operand:GPR 0 "register_operand" "=r,r")
 	(sign_extend:GPR (match_operand:QI 1 "nonimmediate_operand" "r,m")))]
   "TARGET_ZCEE"
@@ -30,7 +30,7 @@
   lb\t%0,%1"
   [(set_attr "type" "zce, load")])
 
-(define_insn "*sign_extendhi<GPR:mode>2_zce"
+(define_insn "sign_extendhi<GPR:mode>2_zce"
   [(set (match_operand:GPR 0 "register_operand" "=r,r")
 	(sign_extend:GPR (match_operand:HI 1 "nonimmediate_operand" "r,m")))]
   "TARGET_ZCEE"
@@ -39,7 +39,7 @@
   lh\t%0,%1"
   [(set_attr "type" "zce, load")])
 
-(define_insn "*sign_extendsidi2_zce"
+(define_insn "sign_extendsidi2_zce"
   [(set (match_operand:DI 0 "register_operand" "=r,r")
 	(sign_extend:DI (match_operand:SI 1 "nonimmediate_operand" "r,m")))]
   "TARGET_64BIT && TARGET_ZCEE"
@@ -49,6 +49,16 @@
   [(set_attr "type" "zce, load")])
 
 ;;ZCEE ZEXT
+
+(define_insn "*zero_extend_qi<GPR:mode>2_zce"
+  [(set (match_operand:GPR 0 "register_operand" "=r,r")
+	(zero_extend:GPR (match_operand:QI 1 "nonimmediate_operand" "r,m")))]
+  "TARGET_ZCEE"
+  "@
+   zext.b\t%0,%1
+   lbu\t%0,%1"
+  [(set_attr "type" "zce,load")])
+
 (define_insn "*zero_extendhi<GPR:mode>2_zce"
   [(set (match_operand:GPR 0 "register_operand" "=r,r")
 	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand" "r,m")))]

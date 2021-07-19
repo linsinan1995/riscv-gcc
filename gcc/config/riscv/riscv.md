@@ -1106,7 +1106,7 @@
   [(set (match_operand:SUPERQI 0 "register_operand"    "=r,r")
 	(zero_extend:SUPERQI
 	    (match_operand:QI 1 "nonimmediate_operand" " r,m")))]
-  ""
+  "!TARGET_ZCEE"
   "@
    andi\t%0,%1,0xff
    lbu\t%0,%1"
@@ -1124,7 +1124,7 @@
   [(set (match_operand:DI     0 "register_operand"     "=r,r")
 	(sign_extend:DI
 	    (match_operand:SI 1 "nonimmediate_operand" " r,m")))]
-  "TARGET_64BIT"
+  "TARGET_64BIT && !TARGET_ZCEE"
   "@
    sext.w\t%0,%1
    lw\t%0,%1"
@@ -1135,7 +1135,7 @@
   [(set (match_operand:SUPERQI   0 "register_operand"     "=r,r")
 	(sign_extend:SUPERQI
 	    (match_operand:SHORT 1 "nonimmediate_operand" " r,m")))]
-  ""
+  "!TARGET_ZCEE"
   "@
    #
    l<SHORT:size>\t%0,%1"
