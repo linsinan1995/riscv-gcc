@@ -1102,11 +1102,36 @@
   [(set_attr "move_type" "shift_shift,load")
    (set_attr "mode" "<GPR:MODE>")])
 
-(define_insn "zero_extendqi<SUPERQI:mode>2"
+(define_expand "zero_extendqi<SUPERQI:mode>2"
+  [(set (match_operand:SUPERQI 0 "register_operand" "")
+	(zero_extend:SUPERQI
+	    (match_operand:QI 1 "nonimmediate_operand" "")))]
+  ""
+{
+  if (!REG_P(operands[0]))
+    FAIL;
+
+  if (TARGET_ZCEE && riscv_zcee_signext(operands[0], operands[1]))
+    gen_zero_extendqi<SUPERQI:mode>2_zce(operands[0], operands[1]);
+  else
+    gen_zero_extendqi<SUPERQI:mode>2_internal(operands[0], operands[1]);
+}
+  [(set_attr "move_type" "andi,load")
+   (set_attr "mode" "<SUPERQI:MODE>")])
+
+(define_insn "zero_extendqi<SUPERQI:mode>2_zce"
+  [(set (match_operand:SUPERQI 0 "register_operand"    "=r")
+	(zero_extend:SUPERQI
+	    (match_operand:QI 1 "nonimmediate_operand" " r")))]
+  ""
+  "c.zext.b\t%0"
+  [(set_attr "mode" "<SUPERQI:MODE>")])
+
+(define_insn "zero_extendqi<SUPERQI:mode>2_internal"
   [(set (match_operand:SUPERQI 0 "register_operand"    "=r,r")
 	(zero_extend:SUPERQI
 	    (match_operand:QI 1 "nonimmediate_operand" " r,m")))]
-  "!TARGET_ZCEE"
+  ""
   "@
    andi\t%0,%1,0xff
    lbu\t%0,%1"
@@ -1124,7 +1149,7 @@
   [(set (match_operand:DI     0 "register_operand"     "=r,r")
 	(sign_extend:DI
 	    (match_operand:SI 1 "nonimmediate_operand" " r,m")))]
-  "TARGET_64BIT && !TARGET_ZCEE"
+  "TARGET_64BIT"
   "@
    sext.w\t%0,%1
    lw\t%0,%1"

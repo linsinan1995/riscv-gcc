@@ -1522,6 +1522,15 @@ riscv_legitimize_const_move (machine_mode mode, rtx dest, rtx src)
   riscv_emit_move (dest, src);
 }
 
+bool riscv_zcee_signext (rtx operand1, rtx operand2)
+{
+  if (!REG_P(operand1))
+    return false;
+
+  int regno1 = REGNO (operand1), regno2 = REGNO (operand2);
+
+  return regno1 == regno2 && (IN_RANGE (regno1, GP_REG_FIRST + 8, GP_REG_FIRST + 15));
+}
 /* If (set DEST SRC) is not a valid move instruction, emit an equivalent
    sequence that is valid.  */
 
