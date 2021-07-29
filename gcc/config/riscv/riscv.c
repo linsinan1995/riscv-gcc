@@ -4516,6 +4516,14 @@ riscv_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
 	!= call_used_or_fixed_reg_p (regno + i))
       return false;
 
+  /* Only use even registers in RV32 ZFINX */
+  if (!TARGET_64BIT && TARGET_ZDINX)
+  {
+    if (GET_MODE_CLASS (mode) == MODE_FLOAT &&
+        GET_MODE_UNIT_SIZE (mode) == GET_MODE_SIZE (DFmode))
+        return !(regno & 1);
+  }
+
   return true;
 }
 
