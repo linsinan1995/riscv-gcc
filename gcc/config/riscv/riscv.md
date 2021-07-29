@@ -1080,11 +1080,22 @@
   [(set (match_operand:GPR 0 "register_operand")
 	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand")))])
 
+(define_insn "*zero_extendhi<GPR:mode>2_zcee_internal"
+  [(set (match_operand:GPR 0 "register_operand" "=r")
+	(zero_extend:GPR
+	    (match_operand:HI 1 "nonimmediate_operand" " r")))]
+  "TARGET_ZCEE && REGNO (operand1) == REGNO (operand2) && 
+   IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15)"
+  "c.zext.h\t%0"
+  [(set_attr "move_type" "zce,load")
+   (set_attr "mode" "<GPR:MODE>")])
+
 (define_insn_and_split "*zero_extendhi<GPR:mode>2_internal"
   [(set (match_operand:GPR    0 "register_operand"     "=r,r")
 	(zero_extend:GPR
 	    (match_operand:HI 1 "nonimmediate_operand" " r,m")))]
-  "!TARGET_ZCEE"
+  "!(TARGET_ZCEE && REGNO (operand1) == REGNO (operand2) && 
+   IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))"
   "@
    #
    lhu\t%0,%1"
@@ -1102,39 +1113,12 @@
   [(set_attr "move_type" "shift_shift,load")
    (set_attr "mode" "<GPR:MODE>")])
 
-(define_expand "zero_extendqi<SUPERQI:mode>2"
-  [(set (match_operand:SUPERQI 0 "register_operand" "")
-	(zero_extend:SUPERQI
-	    (match_operand:QI 1 "nonimmediate_operand" "")))]
-  ""
-{
-  if (!REG_P(operands[0]))
-    FAIL;
-
-  if (TARGET_ZCEE && riscv_zcee_signext(operands[0], operands[1]))
-    gen_zero_extendqi<SUPERQI:mode>2_zce(operands[0], operands[1]);
-  else
-    gen_zero_extendqi<SUPERQI:mode>2_internal(operands[0], operands[1]);
-}
-  [(set_attr "move_type" "andi,load")
-   (set_attr "mode" "<SUPERQI:MODE>")])
-
-(define_insn "zero_extendqi<SUPERQI:mode>2_zce"
-  [(set (match_operand:SUPERQI 0 "register_operand"    "=r")
-	(zero_extend:SUPERQI
-	    (match_operand:QI 1 "nonimmediate_operand" " r")))]
-  ""
-  "c.zext.b\t%0"
-  [(set_attr "mode" "<SUPERQI:MODE>")])
-
-(define_insn "zero_extendqi<SUPERQI:mode>2_internal"
-  [(set (match_operand:SUPERQI 0 "register_operand"    "=r,r")
+(define_insn "zero_extendqi<SUPERQI:mode>2"
+  [(set (match_operand:SUPERQI 0 "register_operand" "=r,r")
 	(zero_extend:SUPERQI
 	    (match_operand:QI 1 "nonimmediate_operand" " r,m")))]
   ""
-  "@
-   andi\t%0,%1,0xff
-   lbu\t%0,%1"
+  { return riscv_output_sign_extend(operands[0], operands[1], false); }
   [(set_attr "move_type" "andi,load")
    (set_attr "mode" "<SUPERQI:MODE>")])
 

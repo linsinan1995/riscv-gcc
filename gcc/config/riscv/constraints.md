@@ -81,3 +81,8 @@
    A constant @code{move_operand}."
   (and (match_operand 0 "move_operand")
        (match_test "CONSTANT_P (op)")))
+
+(define_constraint "Z"
+  "Loop count register @code{r60}"
+  (and (match_code "reg")
+       (match_test "IN_RANGE (REGNO (op), GP_REG_FIRST + 8, GP_REG_FIRST + 15)")))

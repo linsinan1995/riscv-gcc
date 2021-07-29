@@ -1999,7 +1999,31 @@ riscv_split_doubleword_move (rtx dest, rtx src)
        riscv_emit_move (riscv_subword (dest, true), riscv_subword (src, true));
      }
 }
-
+
+const char *
+riscv_output_sign_extend (rtx operand1, rtx operand2, bool unsigned_p, int mode)
+{
+  gcc_assert(REG_P(operand1));
+  switch(mode)
+  {
+    case 0:
+      if (TARGET_ZCEE &&
+        REGNO (operand1) == REGNO (operand2) && 
+        IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))
+        return "c.zext.b\t%0";
+      else
+        return MEM_P(operand2) ? "lbu\t%0,%1" : "andi\t%0,%1,0xff";
+    case 1:
+      if (TARGET_ZCEE &&
+        REGNO (operand1) == REGNO (operand2) && 
+        IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))
+        return "c.zext.h\t%0";
+      else
+        return MEM_P(operand2) ? "lbu\t%0,%1" : "andi\t%0,%1,0xff";
+  }
+  
+}
+
 /* Return the appropriate instructions to move SRC into DEST.  Assume
    that SRC is operand 1 and DEST is operand 0.  */
 

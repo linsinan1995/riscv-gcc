@@ -212,3 +212,9 @@
 {
   return riscv_gpr_save_operation_p (op);
 })
+
+(define_predicate "register_compressible_operand"
+  (match_operand 0 "register_operand")
+{
+  return IN_RANGE (REGNO (op), GP_REG_FIRST + 8, GP_REG_FIRST + 15);
+})

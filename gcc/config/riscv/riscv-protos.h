@@ -50,6 +50,7 @@ extern rtx riscv_unspec_address (rtx, enum riscv_symbol_type);
 extern void riscv_move_integer (rtx, rtx, HOST_WIDE_INT, machine_mode, bool);
 extern bool riscv_legitimize_move (machine_mode, rtx, rtx);
 extern bool riscv_zcee_signext (rtx, rtx);
+const char *riscv_output_sign_extend (rtx, rtx, bool,int);
 extern rtx riscv_subword (rtx, bool);
 extern bool riscv_split_64bit_move_p (rtx, rtx);
 extern void riscv_split_doubleword_move (rtx, rtx);
