@@ -1054,14 +1054,22 @@
 
 (define_expand "zero_extendsidi2"
   [(set (match_operand:DI 0 "register_operand")
-	(zero_extend:DI (match_operand:SI 1 "nonimmediate_operand")))]
-  "TARGET_64BIT")
+	(zero_extend:DI (match_operand:SI 1 "nonimmediate_operand")))])
+
+(define_insn "*zero_extendsidi2_zcee_internal"
+  [(set (match_operand:DI     0 "register_operand"     "=r")
+	(zero_extend:DI
+	    (match_operand:SI 1 "register_operand" " r")))]
+  "TARGET_64BIT && riscv_zcee_compressible (operands[0], operands[1])"
+  "c.zext.w\t%0"
+  [(set_attr "move_type" "load")
+   (set_attr "mode" "DI")])
 
 (define_insn_and_split "*zero_extendsidi2_internal"
   [(set (match_operand:DI     0 "register_operand"     "=r,r")
 	(zero_extend:DI
 	    (match_operand:SI 1 "nonimmediate_operand" " r,m")))]
-  "TARGET_64BIT && !TARGET_ZCEE"
+  "TARGET_64BIT && !riscv_zcee_compressible (operands[0], operands[1]))"
   "@
    #
    lwu\t%0,%1"
@@ -1077,25 +1085,23 @@
    (set_attr "mode" "DI")])
 
 (define_expand "zero_extendhi<GPR:mode>2"
-  [(set (match_operand:GPR 0 "register_operand")
-	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand")))])
+  [(set (match_operand:GPR 0 "register_operand" "=r,r")
+	(zero_extend:GPR (match_operand:HI 1 "nonimmediate_operand" " r,m")))])
 
 (define_insn "*zero_extendhi<GPR:mode>2_zcee_internal"
-  [(set (match_operand:GPR 0 "register_operand" "=r")
+  [(set (match_operand:GPR     0 "register_operand"     "=r")
 	(zero_extend:GPR
-	    (match_operand:HI 1 "nonimmediate_operand" " r")))]
-  "TARGET_ZCEE && REGNO (operand1) == REGNO (operand2) && 
-   IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15)"
+	    (match_operand:HI 1 "register_operand" " r")))]
+  "riscv_zcee_compressible (operands[0], operands[1])"
   "c.zext.h\t%0"
-  [(set_attr "move_type" "zce,load")
+  [(set_attr "move_type" "load")
    (set_attr "mode" "<GPR:MODE>")])
 
 (define_insn_and_split "*zero_extendhi<GPR:mode>2_internal"
   [(set (match_operand:GPR    0 "register_operand"     "=r,r")
 	(zero_extend:GPR
 	    (match_operand:HI 1 "nonimmediate_operand" " r,m")))]
-  "!(TARGET_ZCEE && REGNO (operand1) == REGNO (operand2) && 
-   IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))"
+  "!riscv_zcee_compressible (operands[0], operands[1])"
   "@
    #
    lhu\t%0,%1"
@@ -1118,8 +1124,8 @@
 	(zero_extend:SUPERQI
 	    (match_operand:QI 1 "nonimmediate_operand" " r,m")))]
   ""
-  { return riscv_output_sign_extend(operands[0], operands[1], false); }
-  [(set_attr "move_type" "andi,load")
+  { return riscv_output_sign_extend(operands[0], operands[1], true); }
+  [(set_attr "move_type" "move,andi")
    (set_attr "mode" "<SUPERQI:MODE>")])
 
 ;;
@@ -1134,17 +1140,28 @@
 	(sign_extend:DI
 	    (match_operand:SI 1 "nonimmediate_operand" " r,m")))]
   "TARGET_64BIT"
-  "@
-   sext.w\t%0,%1
-   lw\t%0,%1"
+  { riscv_output_sign_extend (operands[0], operands[1], false); }
   [(set_attr "move_type" "move,load")
    (set_attr "mode" "DI")])
 
-(define_insn_and_split "extend<SHORT:mode><SUPERQI:mode>2"
+(define_expand "extend<SHORT:mode><SUPERQI:mode>2"
+  [(set (match_operand:SUPERQI 0 "register_operand" "=r,r")
+	(sign_extend:SUPERQI (match_operand:SHORT 1 "nonimmediate_operand" " r,m")))])
+
+(define_insn "*extend<SHORT:mode><SUPERQI:mode>2_zcee_internal"
+  [(set (match_operand:SUPERQI 0 "register_operand" "=r")
+	(sign_extend:SUPERQI 
+      (match_operand:SHORT 1 "nonimmediate_operand" " r")))]
+  "riscv_zcee_compressible (operands[0], operands[1])"
+  "c.sext.<SHORT:size>\t%0"
+  [(set_attr "move_type" "load")
+   (set_attr "mode" "SI")])
+
+(define_insn_and_split "*extend<SHORT:mode><SUPERQI:mode>2_internal"
   [(set (match_operand:SUPERQI   0 "register_operand"     "=r,r")
 	(sign_extend:SUPERQI
 	    (match_operand:SHORT 1 "nonimmediate_operand" " r,m")))]
-  "!TARGET_ZCEE"
+  "!riscv_zcee_compressible (operands[0], operands[1])"
   "@
    #
    l<SHORT:size>\t%0,%1"

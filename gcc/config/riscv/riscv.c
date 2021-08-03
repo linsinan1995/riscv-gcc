@@ -1522,15 +1522,6 @@ riscv_legitimize_const_move (machine_mode mode, rtx dest, rtx src)
   riscv_emit_move (dest, src);
 }
 
-bool riscv_zcee_signext (rtx operand1, rtx operand2)
-{
-  if (!REG_P(operand1))
-    return false;
-
-  int regno1 = REGNO (operand1), regno2 = REGNO (operand2);
-
-  return regno1 == regno2 && (IN_RANGE (regno1, GP_REG_FIRST + 8, GP_REG_FIRST + 15));
-}
 /* If (set DEST SRC) is not a valid move instruction, emit an equivalent
    sequence that is valid.  */
 
@@ -1998,30 +1989,6 @@ riscv_split_doubleword_move (rtx dest, rtx src)
        riscv_emit_move (low_dest, riscv_subword (src, false));
        riscv_emit_move (riscv_subword (dest, true), riscv_subword (src, true));
      }
-}
-
-const char *
-riscv_output_sign_extend (rtx operand1, rtx operand2, bool unsigned_p, int mode)
-{
-  gcc_assert(REG_P(operand1));
-  switch(mode)
-  {
-    case 0:
-      if (TARGET_ZCEE &&
-        REGNO (operand1) == REGNO (operand2) && 
-        IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))
-        return "c.zext.b\t%0";
-      else
-        return MEM_P(operand2) ? "lbu\t%0,%1" : "andi\t%0,%1,0xff";
-    case 1:
-      if (TARGET_ZCEE &&
-        REGNO (operand1) == REGNO (operand2) && 
-        IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15))
-        return "c.zext.h\t%0";
-      else
-        return MEM_P(operand2) ? "lbu\t%0,%1" : "andi\t%0,%1,0xff";
-  }
-  
 }
 
 /* Return the appropriate instructions to move SRC into DEST.  Assume
@@ -5284,6 +5251,29 @@ riscv_new_address_profitable_p (rtx memref, rtx_insn *insn, rtx new_addr)
   int old_cost = address_cost (XEXP (memref, 0), GET_MODE (memref), as, speed);
   int new_cost = address_cost (new_addr, GET_MODE (memref), as, speed);
   return new_cost <= old_cost;
+}
+
+/* ZCEE */
+extern bool riscv_zcee_compressible(rtx operand1, rtx operand2)
+{
+  return TARGET_ZCEE &&
+    REG_P (operand1) &&
+    REG_P (operand2) &&
+    REGNO (operand1) == REGNO (operand2) &&
+    IN_RANGE (REGNO (operand1), GP_REG_FIRST + 8, GP_REG_FIRST + 15);
+}
+
+/* sign extention for extendsidi2 and zero extention for extendsidi2 */
+extern const char *riscv_output_sign_extend(rtx operand1, rtx operand2, bool unsigned_p)
+{
+  if (riscv_zcee_compressible (operand1, operand2) && 
+    (unsigned_p | TARGET_64BIT))
+    return unsigned_p ? "c.zext.b\t%0" : "c.sext.w\t%0";
+
+  if (MEM_P (operand2))
+    return unsigned_p ? "lbu\t%0, %1" : "lw\t%0,%1";
+
+  return unsigned_p ? "andi\t%0,%1,0xff" : "sext.w\t%0,%1"; 
 }
 
 /* Initialize the GCC target structure.  */

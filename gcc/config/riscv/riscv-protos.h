@@ -49,8 +49,6 @@ extern bool riscv_split_symbol_type (enum riscv_symbol_type);
 extern rtx riscv_unspec_address (rtx, enum riscv_symbol_type);
 extern void riscv_move_integer (rtx, rtx, HOST_WIDE_INT, machine_mode, bool);
 extern bool riscv_legitimize_move (machine_mode, rtx, rtx);
-extern bool riscv_zcee_signext (rtx, rtx);
-const char *riscv_output_sign_extend (rtx, rtx, bool,int);
 extern rtx riscv_subword (rtx, bool);
 extern bool riscv_split_64bit_move_p (rtx, rtx);
 extern void riscv_split_doubleword_move (rtx, rtx);
@@ -76,6 +74,10 @@ extern bool riscv_expand_block_move (rtx, rtx, rtx);
 extern bool riscv_store_data_bypass_p (rtx_insn *, rtx_insn *);
 extern rtx riscv_gen_gpr_save_insn (struct riscv_frame_info *);
 extern bool riscv_gpr_save_operation_p (rtx);
+
+/* ZCE */
+extern const char *riscv_output_sign_extend (rtx, rtx, bool);
+extern bool riscv_zcee_compressible (rtx, rtx);
 
 /* Routines implemented in riscv-c.c.  */
 void riscv_cpu_cpp_builtins (cpp_reader *);
