@@ -51,26 +51,28 @@ struct riscv_implied_info_t
 {
   const char *ext;
   const char *implied_ext;
+  unsigned int xlen_requirement;
 };
 
 /* Implied ISA info, must end with NULL sentinel.  */
 riscv_implied_info_t riscv_implied_info[] =
 {
-  {"d", "f"},
-  {"k", "zkn"},
-  {"k", "zkr"},
-  {"zkn", "zkne"},
-  {"zkn", "zknd"},
-  {"zkn", "zknh"},
-  {"zkn", "zkg"},
-  {"zkn", "zkb"},
-  {"zks", "zksed"},
-  {"zks", "zksh"},
-  {"zks", "zkg"},
-  {"zks", "zkb"},
-  {"p", "zpn"},
-  {"p", "zpsf"},
-  {NULL, NULL}
+  {"d", "f", 0},
+  {"k", "zkn", 0},
+  {"k", "zkr", 0},
+  {"zkn", "zkne", 0},
+  {"zkn", "zknd", 0},
+  {"zkn", "zknh", 0},
+  {"zkn", "zkg", 0},
+  {"zkn", "zkb", 0},
+  {"zks", "zksed", 0},
+  {"zks", "zksh", 0},
+  {"zks", "zkg", 0},
+  {"zks", "zkb", 0},
+  {"p", "zpn", 0},
+  {"p", "zprv", 64},
+  {"p", "zpsf", 0},
+  {NULL, NULL, NULL}
 };
 
 static const riscv_cpu_info riscv_cpu_tables[] =
@@ -641,9 +643,14 @@ riscv_subset_list::handle_implied_ext (const char *ext,
       if (lookup (implied_info->implied_ext))
 	continue;
 
-      /* TODO: Implied extension might use different version.  */
+	  /* Skip if xlen requirement does not match.  */
+      if ((implied_info->xlen_requirement != 0)
+          && (xlen () != implied_info->xlen_requirement))
+	continue;
+
+	/* TODO: Implied extension might use different version.  */
       add (implied_info->implied_ext, major_version, minor_version,
-	   explicit_version_p);
+          explicit_version_p);
     }
 }
 
