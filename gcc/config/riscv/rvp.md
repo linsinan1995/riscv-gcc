@@ -33,6 +33,8 @@
 
 (define_mode_attr VNHALF [(V2SI "SI") (V2HI "HI")])
 (define_mode_attr VSH_EXT [(V2SI "DI") (V2HI "HI")])
+(define_mode_attr VECI_scalar [(V2SI "SI") (V2HI "HI") (V4HI "HI")
+                            (V4QI "QI") (V8QI "QI")])
 (define_mode_attr VEXT [(V4QI "V4HI") (V2HI "V2SI") (V8QI "V8HI") (V4HI "V4SI")
 			(V2SI "V2DI")])
 (define_code_attr shift [(ashift "ashl") (ashiftrt "ashr") (lshiftrt "lshr")])
@@ -2846,7 +2848,10 @@
 (define_insn "kslra<VECI:mode><X:mode>"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
-	  (lt:X (match_operand:X 2 "register_operand"             " r")
+	  (lt:X
+	    (sign_extend:SI
+		  (truncate:<VECI_scalar>
+		    (match_operand:SI 2 "register_operand"              " r")))
 		(const_int 0))
 	  (ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
 			 (neg:X (match_dup 2)))
@@ -2861,7 +2866,10 @@
 (define_insn "kslra<VECI:mode><X:mode>_round"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
-	  (lt:X (match_operand:X 2 "register_operand"             " r")
+	  (lt:X
+	    (sign_extend:SI
+		  (truncate:<VECI_scalar>
+		    (match_operand:SI 2 "register_operand"                     " r")))
 		(const_int 0))
 	  (unspec:VECI [(ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
 				       (neg:X (match_dup 2)))]
