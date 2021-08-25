@@ -212,3 +212,15 @@
 {
   return riscv_gpr_save_operation_p (op);
 })
+
+(define_predicate "imm5u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u05 (op)")))
+
+(define_predicate "zcea_branching_operator"
+  (match_code "eq,ne")
+{
+  if (GET_CODE (op) == EQ)
+    return riscv_mzce_beqi;
+  return riscv_mzce_bnei;
+})
