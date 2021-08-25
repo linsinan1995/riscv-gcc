@@ -1848,6 +1848,19 @@
 
 ;; Conditional branches
 
+(define_insn "*branch<mode>_zcee"
+  [(set (pc)
+	(if_then_else
+	 (match_operator 1 "equality_operator"
+			 [(match_operand:X 2 "register_operand" "r")
+			  (match_operand:X 3 "imm5u_operand" "u05")])
+	 (label_ref (match_operand 0 "" ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+  "b%C1i\t%2,%z3,%0"
+  [(set_attr "type" "branch")
+   (set_attr "mode" "none")])
+
 (define_insn "*branch<mode>"
   [(set (pc)
 	(if_then_else

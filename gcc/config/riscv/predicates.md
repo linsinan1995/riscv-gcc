@@ -212,3 +212,7 @@
 {
   return riscv_gpr_save_operation_p (op);
 })
+
+(define_predicate "imm5u_operand"
+  (and (match_operand 0 "const_int_operand")
+       (match_test "satisfies_constraint_u05 (op)")))

@@ -2219,11 +2219,37 @@ riscv_zero_if_equal (rtx cmp0, rtx cmp1)
 		       cmp0, cmp1, 0, 0, OPTAB_DIRECT);
 }
 
+
+/* Return true if the the constant operand can meet
+  the requirement of bnei, beqi instructions in zcea.
+*/
+
+static bool
+zcea_branching_imm_operand (const enum rtx_code code, const rtx *op1)
+{
+  if (!CONSTANT_P (*op1) || !TARGET_ZCEA)
+    return false;
+
+  if (code != EQ && code != NE)
+    return false;
+
+  unsigned HOST_WIDE_INT imm = INTVAL (*op1);
+  return imm > 0 && imm < (1 << 5);
+}
+
 /* Sign- or zero-extend OP0 and OP1 for integer comparisons.  */
 
 static void
 riscv_extend_comparands (rtx_code code, rtx *op0, rtx *op1)
 {
+  if (zcea_branching_imm_operand (code, op1))
+    {
+      if (GET_MODE_SIZE (word_mode) > GET_MODE_SIZE (GET_MODE (*op0)))
+        *op0 = gen_rtx_SIGN_EXTEND (word_mode, *op0);
+      else if (GET_MODE_SIZE (word_mode) == GET_MODE_SIZE (GET_MODE (*op0)))
+        return;
+    }
+
   /* Comparisons consider all XLEN bits, so extend sub-XLEN values.  */
   if (GET_MODE_SIZE (word_mode) > GET_MODE_SIZE (GET_MODE (*op0)))
     {
@@ -2276,7 +2302,7 @@ riscv_emit_int_compare (enum rtx_code *code, rtx *op0, rtx *op1)
 	      *op1 = const0_rtx;
 	    }
 	}
-      else
+      else if (!zcea_branching_imm_operand (*code, op1))
 	{
 	  static const enum rtx_code mag_comparisons[][2] = {
 	    {LEU, LTU}, {GTU, GEU}, {LE, LT}, {GT, GE}
@@ -2306,7 +2332,7 @@ riscv_emit_int_compare (enum rtx_code *code, rtx *op0, rtx *op1)
   riscv_extend_comparands (*code, op0, op1);
 
   *op0 = force_reg (word_mode, *op0);
-  if (*op1 != const0_rtx)
+  if (*op1 != const0_rtx && !zcea_branching_imm_operand (*code, op1))
     *op1 = force_reg (word_mode, *op1);
 }
 
