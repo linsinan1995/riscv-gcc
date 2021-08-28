@@ -300,6 +300,8 @@ extern const char *riscv_default_mtune (int argc, const char **argv);
 #define GP_REG_FIRST 0
 #define GP_REG_LAST  (TARGET_RVE ? 15 : 31)
 #define GP_REG_NUM   (GP_REG_LAST - GP_REG_FIRST + 1)
+#define REG_A0       (GP_REG_FIRST + 10)
+#define REG_A1       (GP_REG_FIRST + 11)
 
 #define FP_REG_FIRST 32
 #define FP_REG_LAST  63
@@ -315,6 +317,11 @@ extern const char *riscv_default_mtune (int argc, const char **argv);
   ((unsigned int) ((int) (REGNO) - GP_REG_FIRST) < GP_REG_NUM)
 #define FP_REG_P(REGNO)  \
   ((unsigned int) ((int) (REGNO) - FP_REG_FIRST) < FP_REG_NUM)
+#define REG_S0_to_S7_P(REGNO)	\
+  ((unsigned int) ((int) (REGNO) - GP_REG_FIRST) == 9 \
+      || (unsigned int) ((int) (REGNO) - GP_REG_FIRST) == 8) \
+  || ((unsigned int) ((int) (REGNO) - GP_REG_FIRST) >= 18 \
+      && (unsigned int) ((int) (REGNO) - GP_REG_FIRST) <= 23)
 
 /* True when REGNO is in SIBCALL_REGS set.  */
 #define SIBCALL_REG_P(REGNO)	\

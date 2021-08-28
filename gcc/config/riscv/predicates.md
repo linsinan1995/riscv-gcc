@@ -216,3 +216,15 @@
 (define_predicate "imm5u_operand"
   (and (match_operand 0 "const_int_operand")
        (match_test "satisfies_constraint_u05 (op)")))
+
+(define_predicate "a0_register"
+  (and (match_operand 0 "register_operand")
+       (match_test "REGNO (op) == REG_A0")))
+
+(define_predicate "a1_register"
+  (and (match_operand 0 "register_operand")
+       (match_test "REGNO (op) == REG_A1")))
+
+(define_predicate "s0s7_register"
+  (and (match_operand 0 "register_operand")
+       (match_test "REG_S0_to_S7_P (REGNO (op))")))

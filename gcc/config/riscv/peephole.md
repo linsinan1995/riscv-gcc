@@ -38,3 +38,59 @@
 {
   operands[5] = GEN_INT (INTVAL (operands[2]) - INTVAL (operands[5]));
 })
+
+(define_peephole2
+  [(set (match_operand:X 0 "a0_register")
+	(match_operand:X 1 "s0s7_register"))
+   (set (match_operand:X 2 "a1_register")
+	(match_operand:X 3 "s0s7_register"))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+  {
+    emit_insn (gen_cmva01s07<mode> (operands[0], operands[1],
+					 operands[2], operands[3]));
+    DONE;
+  }
+)
+
+(define_peephole2
+  [(set (match_operand:X 0 "a1_register")
+	(match_operand:X 1 "s0s7_register"))
+   (set (match_operand:X 2 "a0  _register")
+	(match_operand:X 3 "s0s7_register"))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+  {
+    emit_insn (gen_cmva01s07<mode> (operands[1], operands[0],
+					 operands[2], operands[3]));
+    DONE;
+  }
+)
+
+(define_peephole2
+  [(set (match_operand:X 0 "a0_register")
+	(match_operand:X 1 "s0s7_register"))
+   (set (match_operand:X 2 "a1_register")
+	(match_dup 1))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+  {
+    emit_insn (gen_cmva01s07<mode> (operands[0], operands[1],
+					 operands[2], operands[1]));
+    DONE;
+  }
+)
+
+(define_peephole2
+  [(set (match_operand:X 0 "a1_register")
+	(match_operand:X 1 "s0s7_register"))
+   (set (match_operand:X 2 "a0_register")
+	(match_dup 1))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+  {
+    emit_insn (gen_cmva01s07<mode> (operands[1], operands[0],
+					 operands[2], operands[1]));
+    DONE;
+  }
+)

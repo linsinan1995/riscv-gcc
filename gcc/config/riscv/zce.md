@@ -17,3 +17,12 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
+(define_insn "cmva01s07<mode>"
+  [(set (match_operand:X 0 "a0_register")
+	(match_operand:X 1 "s0s7_register"))
+   (set (match_operand:X 2 "a1_register")
+	(match_operand:X 3 "s0s7_register"))]
+  "TARGET_ZCEE"
+  "c.mva01s07\t%2, %3"
+  [(set_attr "type" "zce")
+   (set_attr "mode" "<MODE>")])
