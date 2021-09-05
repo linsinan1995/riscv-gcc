@@ -192,6 +192,9 @@
 (define_predicate "equality_operator"
   (match_code "eq,ne"))
 
+(define_predicate "not_equality_operator"
+  (match_code "ne"))
+
 (define_predicate "order_operator"
   (match_code "eq,ne,lt,ltu,le,leu,ge,geu,gt,gtu"))
 
@@ -216,3 +219,17 @@
 (define_predicate "imm5u_operand"
   (and (match_operand 0 "const_int_operand")
        (match_test "satisfies_constraint_u05 (op)")))
+
+(define_predicate "imm_1_2_4_8_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (ior (match_test "satisfies_constraint_C01 (op)")
+		 (match_test "satisfies_constraint_C02 (op)"))
+	    (ior (match_test "satisfies_constraint_C04 (op)")
+		 (match_test "satisfies_constraint_C08 (op)")))))
+
+(define_predicate "imm_neg_1_2_4_8_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (ior (match_test "satisfies_constraint_N01 (op)")
+		 (match_test "satisfies_constraint_N02 (op)"))
+	    (ior (match_test "satisfies_constraint_N04 (op)")
+		 (match_test "satisfies_constraint_N08 (op)")))))

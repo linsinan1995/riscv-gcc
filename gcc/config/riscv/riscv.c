@@ -2236,6 +2236,18 @@ zcea_branching_imm_operand (const enum rtx_code code, const rtx *op1)
   return imm5u_operand (*op1, VOIDmode);
 }
 
+static bool
+zceb_branching_imm_operand (const enum rtx_code code, const rtx *op1)
+{
+  if (!CONSTANT_P (*op1) || !TARGET_ZCEE)
+    return false;
+
+  if (code != EQ)
+    return false;
+
+  return imm5u_operand (*op1, VOIDmode);
+}
+
 /* Sign- or zero-extend OP0 and OP1 for integer comparisons.  */
 
 static void

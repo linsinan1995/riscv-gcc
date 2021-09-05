@@ -17,3 +17,16 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
+(define_insn "decbnez<mode>"
+  [(set (match_operand:X 0 "register_operand" "= r")
+    (minus:X (match_dup 0)
+      (match_operand:X 1 "imm_1_2_4_8_operand" "I")))
+  (set (pc)
+	(if_then_else
+	 (eq:X (match_dup 0) (const_int 0))
+	 (label_ref (match_operand 2 "" ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+  "decbnez\t%0,%1,%2"
+  [(set_attr "type" "branch")
+   (set_attr "mode" "none")])

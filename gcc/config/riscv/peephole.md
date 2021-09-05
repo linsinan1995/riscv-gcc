@@ -38,3 +38,56 @@
 {
   operands[5] = GEN_INT (INTVAL (operands[2]) - INTVAL (operands[5]));
 })
+
+(define_peephole2
+  [(set (match_operand:X 0     "register_operand")
+	(match_operand:X 1 "imm_1_2_4_8_operand"))
+  (set (pc)
+	(if_then_else
+	 (eq:X (match_operand:X 2  "register_operand")
+			  (match_dup 0))
+	 (label_ref (match_operand 3 ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+{
+  emit_insn (gen_decbnez<mode> (operands[3], operands[1],
+    operands[2]));
+  DONE;
+})
+
+(define_peephole2
+  [(set (match_operand:X 0 "register_operand")
+	(plus:X (match_dup 0)
+		   (match_operand:X 1 "imm_neg_1_2_4_8_operand")))
+  (set (pc)
+	(if_then_else
+	 (eq:X (match_dup 0)
+			  (const_int 0))
+	 (label_ref (match_operand 2 ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+{
+  emit_insn (gen_decbnez<mode> (operands[0], operands[1],
+    operands[2]));
+  DONE;
+})
+
+(define_peephole2
+  [(set (match_operand:X 0 "register_operand")
+	(plus:X (match_operand:X 1 "register_operand")
+		   (match_operand:X 2 "imm_neg_1_2_4_8_operand")))
+  (set (pc)
+	(if_then_else
+	 (eq:X (match_dup 0)
+			  (const_int 0))
+	 (label_ref (match_operand 3 ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+  [(const_int 0)]
+{
+  emit_insn (gen_decbnez<mode> (operands[0], operands[2],
+    operands[3]));
+  DONE;
+})
