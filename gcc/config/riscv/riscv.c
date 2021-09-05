@@ -2233,8 +2233,7 @@ zcea_branching_imm_operand (const enum rtx_code code, const rtx *op1)
   if (code != EQ && code != NE)
     return false;
 
-  unsigned HOST_WIDE_INT imm = INTVAL (*op1);
-  return imm > 0 && imm < (1 << 5);
+  return imm5u_operand (*op1, VOIDmode);
 }
 
 /* Sign- or zero-extend OP0 and OP1 for integer comparisons.  */
@@ -2302,7 +2301,7 @@ riscv_emit_int_compare (enum rtx_code *code, rtx *op0, rtx *op1)
 	      *op1 = const0_rtx;
 	    }
 	}
-      else if (!zcea_branching_imm_operand (*code, op1))
+      else
 	{
 	  static const enum rtx_code mag_comparisons[][2] = {
 	    {LEU, LTU}, {GTU, GEU}, {LE, LT}, {GT, GE}
