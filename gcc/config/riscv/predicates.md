@@ -217,6 +217,10 @@
   (and (match_operand 0 "const_int_operand")
        (match_test "satisfies_constraint_u05 (op)")))
 
+(define_predicate "offset_operand"
+  (and (match_code "const_int")
+       (match_test "(INTVAL (op) < (1 << 12)) && !(INTVAL (op) & 1)")))
+
 (define_predicate "a0_register"
   (and (match_operand 0 "register_operand")
        (match_test "REGNO (op) == REG_A0")))
@@ -228,3 +232,10 @@
 (define_predicate "s0s7_register"
   (and (match_operand 0 "register_operand")
        (match_test "REG_S0_to_S7_P (REGNO (op))")))
+
+(define_predicate "imm_1_2_4_8_operand"
+  (and (match_operand 0 "const_int_operand")
+       (ior (ior (match_test "satisfies_constraint_C01 (op)")
+		 (match_test "satisfies_constraint_C02 (op)"))
+	    (ior (match_test "satisfies_constraint_C04 (op)")
+		 (match_test "satisfies_constraint_C08 (op)")))))

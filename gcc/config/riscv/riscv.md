@@ -1848,6 +1848,24 @@
 
 ;; Conditional branches
 
+(define_insn "*decbnez<mode>"
+  [(set (pc)
+	(if_then_else
+	 (match_operator 1 "equality_operator"
+			 [(match_operand:X 2 "register_operand" "r")
+			  (match_operand:X 3 "imm_1_2_4_8_operand" "I")])
+	 (label_ref (match_operand 0 "" ""))
+	 (pc)))]
+  "TARGET_ZCEE"
+{
+  if (GET_CODE (operands[1]) == NE)
+    operands[3] = GEN_INT (- INTVAL (operands[3]));
+
+  return "decbnez\t%2,%3,%0";
+}
+  [(set_attr "type" "branch")
+   (set_attr "mode" "none")])
+
 (define_insn "*branch<mode>_zcee"
   [(set (pc)
 	(if_then_else

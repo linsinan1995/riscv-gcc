@@ -2227,14 +2227,25 @@ riscv_zero_if_equal (rtx cmp0, rtx cmp1)
 static bool
 zcea_branching_imm_operand (const enum rtx_code code, const rtx *op1)
 {
-  if (!CONSTANT_P (*op1) || !TARGET_ZCEA)
+  if (!CONSTANT_P (*op1) || !TARGET_ZCEE)
     return false;
 
   if (code != EQ && code != NE)
     return false;
 
-  unsigned HOST_WIDE_INT imm = INTVAL (*op1);
-  return imm > 0 && imm < (1 << 5);
+  return imm5u_operand (*op1, VOIDmode);
+}
+
+static bool
+zceb_branching_p (const enum rtx_code code, const rtx *op1)
+{
+  if (!CONSTANT_P (*op1) || !TARGET_ZCEE)
+    return false;
+
+  if (code != EQ && code != NE)
+    return false;
+
+  return imm_1_2_4_8_operand (*op1, VOIDmode);
 }
 
 /* Sign- or zero-extend OP0 and OP1 for integer comparisons.  */
@@ -2279,6 +2290,32 @@ riscv_extend_comparands (rtx_code code, rtx *op0, rtx *op1)
 	    *op1 = gen_rtx_SIGN_EXTEND (word_mode, *op1);
 	}
     }
+}
+
+static bool
+riscv_zce_branching_p (const enum rtx_code *code, const rtx *op0, const rtx *op1)
+{
+  /* zceb: decbnez */
+  if (zceb_branching_p (*code, op1))
+    return true;
+
+  /* zcea: bnei/beqi */
+  return zcea_branching_imm_operand (*code, op1);
+}
+
+static bool
+riscv_zce_emit_int_compare (enum rtx_code *code, rtx *op0, rtx *op1)
+{
+  /* zceb: decbnez */
+  
+  /* zcea: bnei/beqi */
+  return zcea_branching_imm_operand (*code, op1);
+}
+
+static void
+riscv_emit_zcee_int_compare (enum rtx_code *code, rtx *op0, rtx *op1)
+{
+
 }
 
 /* Convert a comparison into something that can be used in a branch.  On
@@ -2461,6 +2498,8 @@ riscv_expand_conditional_branch (rtx label, rtx_code code, rtx op0, rtx op1)
 {
   if (FLOAT_MODE_P (GET_MODE (op1)))
     riscv_emit_float_compare (&code, &op0, &op1);
+  // else if (riscv_zce_branching_p (&code, &op1))
+  //   riscv_emit_zcee_int_compare (&code, &op0, &op1);
   else
     riscv_emit_int_compare (&code, &op0, &op1);
 

@@ -86,3 +86,24 @@
   "Unsigned immediate 5-bit value"
   (and (match_code "const_int")
        (match_test "ival < (1 << 5) && ival > 0")))
+
+(define_constraint "C01"
+  "Constant value 1"
+  (and (match_code "const_int")
+       (match_test "ival == 1")))
+
+(define_constraint "C02"
+  "Constant value 2"
+  (and (match_code "const_int")
+       (match_test "ival == 2")))
+
+(define_constraint "C04"
+  "Constant value 4"
+  (and (match_code "const_int")
+       (match_test "ival == 4")))
+
+(define_constraint "C08"
+  "Constant value 8"
+  (and (match_code "const_int")
+       (match_test "ival == 8")))
+
