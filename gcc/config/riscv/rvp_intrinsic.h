@@ -47,7 +47,7 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
 #define __rv_packu(a, b) \
   (__builtin_riscv_pktt16 ((a), (b)))
 #define __rv_rev(a) \
-  (__builtin_riscv_bitrev ((a), 32))
+  (__builtin_riscv_bitrev ((a), 31))
 #define __rv_v_rev8h(a) \
   (__builtin_riscv_swap8 ((a)))
 #else
@@ -58,7 +58,7 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
 #define __rv_packu(a, b) \
   (__builtin_riscv_pktt32 ((a), (b)))
 #define __rv_rev(a) \
-  (__builtin_riscv_bitrev ((a), 64))
+  (__builtin_riscv_bitrev ((a), 63))
 #define __rv_v_rev8h(a) \
   (__builtin_riscv_v64_swap8 ((a)))
 #endif
