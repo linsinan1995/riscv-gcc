@@ -107,5 +107,5 @@ struct riscv_cpu_info {
 };
 
 extern const riscv_cpu_info *riscv_find_cpu (const char *);
-
+extern const char *riscv_rvp_output_pack (enum machine_mode, rtx, rtx);
 #endif /* ! GCC_RISCV_PROTOS_H */

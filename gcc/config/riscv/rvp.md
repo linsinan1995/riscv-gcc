@@ -3204,9 +3204,9 @@
    pktb<bits>\t%0, %2, %1
    pktt<bits>\t%0, %2, %1
    pkbt<bits>\t%0, %2, %1
-   pkbb<bits>\t%0, %1, %2
+   * return riscv_rvp_output_pack (<mode>mode, operands[4], operands[5]);
    pkbt<bits>\t%0, %1, %2
-   pktt<bits>\t%0, %1, %2
+   * return riscv_rvp_output_pack (<mode>mode, operands[4], operands[5]);
    pktb<bits>\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode"  "<MODE>")])

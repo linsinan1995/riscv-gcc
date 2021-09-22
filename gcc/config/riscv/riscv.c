@@ -5279,6 +5279,20 @@ riscv_vector_mode_supported_p (enum machine_mode mode)
   return false;
 }
 
+const char *
+riscv_rvp_output_pack (enum machine_mode mode, rtx op4, rtx op5)
+{
+  if (INTVAL (op4) == 0 && INTVAL (op5) == 0)
+    return (TARGET_ZBPBO && (mode == V2HImode || (mode == V2SImode && TARGET_64BIT))) ?
+	"pack\t%0, %1, %2" : "pkbb<bits>\t%0, %1, %2";
+
+  if (INTVAL (op4) == 1 && INTVAL (op5) == 1)
+    return (TARGET_ZBPBO && (mode == V2HImode || (mode == V2SImode && TARGET_64BIT))) ?
+	"packu\t%0, %1, %2" : "pktt<bits>\t%0, %1, %2";
+
+  gcc_unreachable();
+}
+
 /* Initialize the GCC target structure.  */
 #undef TARGET_ASM_ALIGNED_HI_OP
 #define TARGET_ASM_ALIGNED_HI_OP "\t.half\t"
