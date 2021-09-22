@@ -309,13 +309,11 @@
 		   UNSPEC_BITREV))]
   "TARGET_ZPN && !TARGET_64BIT"
   {
-	if (TARGET_ZBPBO && GET_CODE (operands[2]) == CONST_INT)
-	  if (TARGET_64BIT && INTVAL (operands[2]) == 63)
-	    return "rev\t%0,%1";
-	  else if (TARGET_64BIT && INTVAL (operands[2]) == 31)
-	    return "rev\t%0,%1";
+    if (TARGET_ZBPBO && GET_CODE (operands[2]) == CONST_INT &&
+        INTVAL (operands[2]) == 63)
+      return "rev\t%0,%1";
 
-	return GET_CODE (operands[2]) == CONST_INT ? "bitrevi\t%0, %1, %2" : "bitrev\t%0, %1, %2";
+    return GET_CODE (operands[2]) == CONST_INT ? "bitrevi\t%0, %1, %2" : "bitrev\t%0, %1, %2";
   }
   [(set_attr "type"   "dsp")
    (set_attr "mode"   "SI")])
@@ -326,9 +324,13 @@
 		    (match_operand:SI 2 "rimm6u_operand"   " r, u06")]
 		   UNSPEC_BITREV))]
   "TARGET_ZPN && TARGET_64BIT"
-  "@
-   bitrev\t%0, %1, %2
-   bitrevi\t%0, %1, %2"
+  {
+    if (TARGET_ZBPBO && GET_CODE (operands[2]) == CONST_INT &&
+        INTVAL (operands[2]) == 31)
+      return "rev\t%0,%1";
+
+    return GET_CODE (operands[2]) == CONST_INT ? "bitrevi\t%0, %1, %2" : "bitrev\t%0, %1, %2";
+  }
   [(set_attr "type"   "dsp")
    (set_attr "mode"   "SI")])
 
