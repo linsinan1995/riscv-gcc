@@ -49,7 +49,7 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
 #define __rv_rev(a) \
   (__builtin_riscv_bitrev ((a), 32))
 #define __rv_v_rev8h(a) \
-  (__builtin_riscv_v_swap8 ((a)))
+  (__builtin_riscv_swap8 ((a)))
 #else
 #define __rv_fsrw(a,b,c) \
   (__builtin_riscv_fsrw ((a), (b), (c)))
