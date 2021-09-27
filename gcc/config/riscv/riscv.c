@@ -3366,7 +3366,8 @@ riscv_memmodel_needs_release_fence (enum memmodel model)
    'A'	Print the atomic operation suffix for memory model OP.
    'F'	Print a FENCE if the memory model requires a release.
    'z'	Print x0 if OP is zero, otherwise print OP normally.
-   'i'	Print i if the operand is not a register.  */
+   'i'	Print i if the operand is not a register.
+   'n'	Print the odd register in rvp zpsf even/odd register pair. */
 
 static void
 riscv_print_operand (FILE *file, rtx op, int letter)
@@ -3404,6 +3405,10 @@ riscv_print_operand (FILE *file, rtx op, int letter)
     case 'i':
       if (code != REG)
         fputs ("i", file);
+      break;
+
+    case 'n':
+      fprintf (file, "%s", reg_names[REGNO (op)] + 1);
       break;
 
     default:

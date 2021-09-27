@@ -40,8 +40,6 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
 #if __riscv_xlen == 32
 #define __rv_clz(a) \
   (__builtin_riscv_clz ((a)))
-#define __rv_fsr(a,b,c) \
-  (__builtin_riscv_fsr ((a), (b), (c)))
 #define __rv_pack(a, b) \
   (__builtin_riscv_pkbb16 ((a), (b)))
 #define __rv_packu(a, b) \
@@ -51,8 +49,6 @@ typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
 #define __rv_v_rev8h(a) \
   (__builtin_riscv_swap8 ((a)))
 #else
-#define __rv_fsrw(a,b,c) \
-  (__builtin_riscv_fsrw ((a), (b), (c)))
 #define __rv_pack(a, b) \
   (__builtin_riscv_pkbb32 ((a), (b)))
 #define __rv_packu(a, b) \

@@ -219,11 +219,12 @@
 ;; psimd  partial-simd data processing instructions 
 ;; dsp    instructions for increasing the DSP processing capabilities
 ;; dsp64  as the same as dsp, but RV64P only
+;; zbpbo  rvp zbpbo subset instruction
 (define_attr "type"
   "unknown,branch,jump,call,load,fpload,store,fpstore,
    mtc,mfc,const,arith,logical,shift,slt,imul,idiv,move,fmove,fadd,fmul,
    fmadd,fdiv,fcmp,fcvt,fsqrt,multi,auipc,sfb_alu,nop,ghost,
-   simd,psimd,dsp,dsp64"
+   simd,psimd,dsp,dsp64,zbpbo"
   (cond [(eq_attr "got" "load") (const_string "load")
 
 	 ;; If a doubleword move uses these expensive instructions,

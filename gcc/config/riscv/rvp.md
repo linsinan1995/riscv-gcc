@@ -6565,6 +6565,88 @@
   [(set_attr "type" "dsp")
    (set_attr "mode" "DI")])
 
+(define_insn "kslra<VECI:mode><X:mode>"
+  [(set (match_operand:VECI 0 "register_operand"                  "=r")
+	(if_then_else:VECI
+	  (lt:X
+	    (sign_extend:SI
+		  (truncate:<VECI_scalar>
+		    (match_operand:SI 2 "register_operand"              " r")))
+		(const_int 0))
+	  (ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
+			 (neg:X (match_dup 2)))
+	  (ss_ashift:VECI (match_dup 1)
+			  (match_dup 2))))]
+  "TARGET_ZPN"
+  "kslra<VECI:bits>\t%0, %1, %2"
+  [(set_attr "type" "simd")
+   (set_attr "mode" "<VECI:MODE>")])
+
+(define_insn "rvp_fsr"
+  [(set (match_operand:SI 0 "register_operand"     "=r,  r")
+    (if_then_else:SI
+      (ge:SI
+        (match_operand:SI 2 "register_operand"     "=r,  r")
+        (const_int 32))
+	  (ior:DI (us_ashift (zero_extend:DI (match_operand:SI 3 "register_operand"     "=r,  r"))
+	          (lshiftrt (zero_extend:DI (match_operand:SI 4 "register_operand"     "=r,  r"))
+	  ()
+	(truncate:SI
+	  (ashiftrt:DI
+	    (match_operand:DI 1 "register_operand" " r,  r")
+	    (match_operand:SI 2 "rimm5u_operand"   " r,u05"))))]
+  "TARGET_ZBPBO && !TARGET_64BIT"
+  "@
+   wext\t%0, %1, %2
+   wexti\t%0, %1, %2"
+  [(set_attr "type" "zbpbo")
+   (set_attr "mode" "SI")])
+
+(define_expand "rvp_fsr"
+  [(match_operand:SI 0 "register_operand")
+   (match_operand:SI 1 "register_operand")
+   (match_operand:SI 2 "register_operand")
+   (match_operand:SI 3 "register_operand")]
+  "TARGET_ZBPBO && !TARGET_64BIT"
+{
+  emit_insn (gen_vec_merge<mode> (operands[0], operands[1], operands[2],
+				  operands[3]);
+  DONE;
+}
+[(set_attr "type" "zbpbo")])
+
+
+(define_expand "<u>mulditi3"
+  [(set (match_operand:TI                         0 "register_operand")
+	(mult:TI (any_extend:TI (match_operand:DI 1 "register_operand"))
+		 (any_extend:TI (match_operand:DI 2 "register_operand"))))]
+  "TARGET_MUL && TARGET_64BIT"
+{
+  rtx low = gen_reg_rtx (DImode);
+  emit_insn (gen_muldi3 (low, operands[1], operands[2]));
+
+  rtx high = gen_reg_rtx (DImode);
+  emit_insn (gen_<u>muldi3_highpart (high, operands[1], operands[2]));
+
+  emit_move_insn (gen_lowpart (DImode, operands[0]), low);
+  emit_move_insn (gen_highpart (DImode, operands[0]), high);
+  DONE;
+})
+
+(define_insn "<u>muldi3_highpart"
+  [(set (match_operand:DI                0 "register_operand" "=r")
+	(truncate:DI
+	  (lshiftrt:TI
+	    (mult:TI (any_extend:TI
+		       (match_operand:DI 1 "register_operand" " r"))
+		     (any_extend:TI
+		       (match_operand:DI 2 "register_operand" " r")))
+	    (const_int 64))))]
+  "TARGET_MUL && TARGET_64BIT"
+  "mulh<u>\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "DI")])
+
 ;; KDMBB16, KDMBT16, KDMTT16
 
 (define_insn "kdmbb16"
