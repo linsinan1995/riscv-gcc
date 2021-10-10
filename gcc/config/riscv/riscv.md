@@ -591,7 +591,13 @@
   [(set_attr "type" "fmul")
    (set_attr "mode" "<UNITMODE>")])
 
-(define_insn "mulsi3"
+(define_expand "mul<mode>3"
+  [(set (match_operand:GPR          0 "register_operand")
+	(mult:GPR (match_operand:GPR 1 "register_operand")
+		 (match_operand:GPR 2 "arith_operand")))]
+  "TARGET_MUL")
+
+(define_insn "*mulsi3"
   [(set (match_operand:SI          0 "register_operand" "=r")
 	(mult:SI (match_operand:SI 1 "register_operand" " r")
 		 (match_operand:SI 2 "register_operand" " r")))]
@@ -600,7 +606,7 @@
   [(set_attr "type" "imul")
    (set_attr "mode" "SI")])
 
-(define_insn "muldi3"
+(define_insn "*muldi3"
   [(set (match_operand:DI          0 "register_operand" "=r")
 	(mult:DI (match_operand:DI 1 "register_operand" " r")
 		 (match_operand:DI 2 "register_operand" " r")))]

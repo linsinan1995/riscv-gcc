@@ -29,3 +29,12 @@
   "b%C1i\t%2,%z3,%0"
   [(set_attr "type" "branch")
    (set_attr "mode" "none")])
+
+(define_insn "*mul<mode>3_zcea"
+  [(set (match_operand:X          0 "register_operand" "=r")
+	(mult:X (match_operand:X 1 "register_operand" " r")
+		 (match_operand:X 2 "const_arith_operand" " I")))]
+  "TARGET_MUL && TARGET_ZCEA && riscv_mzce_muli"
+  "muli\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "<MODE>")])
