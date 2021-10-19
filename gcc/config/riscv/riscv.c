@@ -3692,6 +3692,12 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 	  {
 	    rtx imm;
 
+	   if (letter == 'z' && op == CONST0_RTX (GET_MODE (op))
+		&& GET_MODE_SIZE (mode).to_constant () <= UNITS_PER_WORD) {
+	     fputs (reg_names[GP_REG_FIRST], file);
+	     break;
+	   }
+
 	    if (!const_vec_duplicate_p (op, &imm)) {
 	      output_operand_lossage ("invalid immediate value for vector");
 	      break;
