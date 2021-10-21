@@ -4931,7 +4931,12 @@ static bool
 riscv_vector_mode (machine_mode mode)
 {
   scalar_mode inner = GET_MODE_INNER (mode);
-  if (VECTOR_MODE_P (mode)
+
+  if (riscv_rvp_support_vector_mode_p)
+    return true;
+
+  if (TARGET_VECTOR
+      && VECTOR_MODE_P (mode)
       && (inner == BImode
 	  || inner == QImode
 	  || inner == HImode
@@ -4940,7 +4945,7 @@ riscv_vector_mode (machine_mode mode)
 	  || inner == SFmode
 	  || inner == DImode
 	  || inner == DFmode))
-    return true;
+    return GET_MODE_SIZE (mode).to_constant () > UNITS_PER_WORD;
 
   return false;
 }
@@ -5941,7 +5946,7 @@ riscv_vector_mode_supported_p (enum machine_mode mode)
       && TARGET_64BIT)
     return false;
 
-  if (TARGET_VECTOR && riscv_vector_mode (mode))
+  if (riscv_vector_mode (mode))
     return true;
 
   return false;
