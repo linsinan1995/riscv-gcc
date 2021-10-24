@@ -108,4 +108,6 @@ struct riscv_cpu_info {
 
 extern const riscv_cpu_info *riscv_find_cpu (const char *);
 
+extern bool riscv_rvp_support_vector_mode_p (machine_mode mode);
+
 #endif /* ! GCC_RISCV_PROTOS_H */

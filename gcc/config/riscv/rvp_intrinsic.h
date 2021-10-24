@@ -20,1551 +20,693 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef _RISCV_RVP_INTRINSIC_H
 #define _RISCV_RVP_INTRINSIC_H
 
+#if !defined (__riscv_zpn)
+#error "Packed SIMD intrinsics require the rvp extension."
+#else
+
+#include <stdint.h>
+
 typedef signed char int8x4_t __attribute ((vector_size(4)));
 typedef signed char int8x8_t __attribute ((vector_size(8)));
 typedef short int16x2_t __attribute ((vector_size(4)));
 typedef short int16x4_t __attribute__((vector_size (8)));
-typedef short int16x8_t __attribute__((vector_size (16)));
 typedef int int32x2_t __attribute__((vector_size(8)));
-typedef int int32x4_t __attribute__((vector_size(16)));
 typedef unsigned char uint8x4_t __attribute__ ((vector_size (4)));
 typedef unsigned char uint8x8_t __attribute__ ((vector_size (8)));
 typedef unsigned short uint16x2_t __attribute__ ((vector_size (4)));
 typedef unsigned short uint16x4_t __attribute__((vector_size (8)));
-typedef unsigned short uint16x8_t __attribute__((vector_size (16)));
 typedef unsigned int uint32x2_t __attribute__((vector_size(8)));
-typedef unsigned int uint32x4_t __attribute__((vector_size(16)));
+typedef unsigned long uixlen_t;
+typedef long ixlen_t;
 
-// zpn
-#define __rv_add16(a, b) \
-  (__builtin_riscv_add16 ((a), (b)))
-#define __rv_radd16(a, b) \
-  (__builtin_riscv_radd16 ((a), (b)))
-#define __rv_uradd16(a, b) \
-  (__builtin_riscv_uradd16 ((a), (b)))
-#define __rv_kadd16(a, b) \
-  (__builtin_riscv_kadd16 ((a), (b)))
-#define __rv_ukadd16(a, b) \
-  (__builtin_riscv_ukadd16 ((a), (b)))
-#define __rv_sub16(a, b) \
-  (__builtin_riscv_sub16 ((a), (b)))
-#define __rv_rsub16(a, b) \
-  (__builtin_riscv_rsub16 ((a), (b)))
-#define __rv_ursub16(a, b) \
-  (__builtin_riscv_ursub16 ((a), (b)))
-#define __rv_ksub16(a, b) \
-  (__builtin_riscv_ksub16 ((a), (b)))
-#define __rv_uksub16(a, b) \
-  (__builtin_riscv_uksub16 ((a), (b)))
-#define __rv_cras16(a, b) \
-  (__builtin_riscv_cras16 ((a), (b)))
-#define __rv_rcras16(a, b) \
-  (__builtin_riscv_rcras16 ((a), (b)))
-#define __rv_urcras16(a, b) \
-  (__builtin_riscv_urcras16 ((a), (b)))
-#define __rv_kcras16(a, b) \
-  (__builtin_riscv_kcras16 ((a), (b)))
-#define __rv_ukcras16(a, b) \
-  (__builtin_riscv_ukcras16 ((a), (b)))
-#define __rv_crsa16(a, b) \
-  (__builtin_riscv_crsa16 ((a), (b)))
-#define __rv_rcrsa16(a, b) \
-  (__builtin_riscv_rcrsa16 ((a), (b)))
-#define __rv_urcrsa16(a, b) \
-  (__builtin_riscv_urcrsa16 ((a), (b)))
-#define __rv_kcrsa16(a, b) \
-  (__builtin_riscv_kcrsa16 ((a), (b)))
-#define __rv_ukcrsa16(a, b) \
-  (__builtin_riscv_ukcrsa16 ((a), (b)))
-#define __rv_stas16(a, b) \
-  (__builtin_riscv_stas16 ((a), (b)))
-#define __rv_rstas16(a, b) \
-  (__builtin_riscv_rstas16 ((a), (b)))
-#define __rv_urstas16(a, b) \
-  (__builtin_riscv_urstas16 ((a), (b)))
-#define __rv_kstas16(a, b) \
-  (__builtin_riscv_kstas16 ((a), (b)))
-#define __rv_ukstas16(a, b) \
-  (__builtin_riscv_ukstas16 ((a), (b)))
-#define __rv_stsa16(a, b) \
-  (__builtin_riscv_stsa16 ((a), (b)))
-#define __rv_rstsa16(a, b) \
-  (__builtin_riscv_rstsa16 ((a), (b)))
-#define __rv_urstsa16(a, b) \
-  (__builtin_riscv_urstsa16 ((a), (b)))
-#define __rv_kstsa16(a, b) \
-  (__builtin_riscv_kstsa16 ((a), (b)))
-#define __rv_ukstsa16(a, b) \
-  (__builtin_riscv_ukstsa16 ((a), (b)))
-#define __rv_add8(a, b) \
-  (__builtin_riscv_add8 ((a), (b)))
-#define __rv_radd8(a, b) \
-  (__builtin_riscv_radd8 ((a), (b)))
-#define __rv_uradd8(a, b) \
-  (__builtin_riscv_uradd8 ((a), (b)))
-#define __rv_kadd8(a, b) \
-  (__builtin_riscv_kadd8 ((a), (b)))
-#define __rv_ukadd8(a, b) \
-  (__builtin_riscv_ukadd8 ((a), (b)))
-#define __rv_sub8(a, b) \
-  (__builtin_riscv_sub8 ((a), (b)))
-#define __rv_rsub8(a, b) \
-  (__builtin_riscv_rsub8 ((a), (b)))
-#define __rv_ursub8(a, b) \
-  (__builtin_riscv_ursub8 ((a), (b)))
-#define __rv_ksub8(a, b) \
-  (__builtin_riscv_ksub8 ((a), (b)))
-#define __rv_uksub8(a, b) \
-  (__builtin_riscv_uksub8 ((a), (b)))
-#define __rv_sra16(a, b) \
-  (__builtin_riscv_sra16 ((a), (b)))
-#define __rv_sra16_u(a, b) \
-  (__builtin_riscv_sra16_u ((a), (b)))
-#define __rv_srl16(a, b) \
-  (__builtin_riscv_srl16 ((a), (b)))
-#define __rv_srl16_u(a, b) \
-  (__builtin_riscv_srl16_u ((a), (b)))
-#define __rv_sll16(a, b) \
-  (__builtin_riscv_sll16 ((a), (b)))
-#define __rv_ksll16(a, b) \
-  (__builtin_riscv_ksll16 ((a), (b)))
-#define __rv_kslra16(a, b) \
-  (__builtin_riscv_kslra16 ((a), (b)))
-#define __rv_kslra16_u(a, b) \
-  (__builtin_riscv_kslra16_u ((a), (b)))
-#define __rv_cmpeq16(a, b) \
-  (__builtin_riscv_cmpeq16 ((a), (b)))
-#define __rv_scmplt16(a, b) \
-  (__builtin_riscv_scmplt16 ((a), (b)))
-#define __rv_scmple16(a, b) \
-  (__builtin_riscv_scmple16 ((a), (b)))
-#define __rv_ucmplt16(a, b) \
-  (__builtin_riscv_ucmplt16 ((a), (b)))
-#define __rv_ucmple16(a, b) \
-  (__builtin_riscv_ucmple16 ((a), (b)))
-#define __rv_cmpeq8(a, b) \
-  (__builtin_riscv_cmpeq8 ((a), (b)))
-#define __rv_scmplt8(a, b) \
-  (__builtin_riscv_scmplt8 ((a), (b)))
-#define __rv_scmple8(a, b) \
-  (__builtin_riscv_scmple8 ((a), (b)))
-#define __rv_ucmplt8(a, b) \
-  (__builtin_riscv_ucmplt8 ((a), (b)))
-#define __rv_ucmple8(a, b) \
-  (__builtin_riscv_ucmple8 ((a), (b)))
-#define __rv_smin16(a, b) \
-  (__builtin_riscv_smin16 ((a), (b)))
-#define __rv_umin16(a, b) \
-  (__builtin_riscv_umin16 ((a), (b)))
-#define __rv_smax16(a, b) \
-  (__builtin_riscv_smax16 ((a), (b)))
-#define __rv_umax16(a, b) \
-  (__builtin_riscv_umax16 ((a), (b)))
-#define __rv_sclip16(a, b) \
-  (__builtin_riscv_sclip16 ((a), (b)))
-#define __rv_uclip16(a, b) \
-  (__builtin_riscv_uclip16 ((a), (b)))
-#define __rv_khm16(a, b) \
-  (__builtin_riscv_khm16 ((a), (b)))
-#define __rv_khmx16(a, b) \
-  (__builtin_riscv_khmx16 ((a), (b)))
-#define __rv_khm8(a, b) \
-  (__builtin_riscv_khm8 ((a), (b)))
-#define __rv_khmx8(a, b) \
-  (__builtin_riscv_khmx8 ((a), (b)))
-#define __rv_kabs16(a) \
-  (__builtin_riscv_kabs16 ((a)))
-#define __rv_smin8(a, b) \
-  (__builtin_riscv_smin8 ((a), (b)))
-#define __rv_umin8(a, b) \
-  (__builtin_riscv_umin8 ((a), (b)))
-#define __rv_smax8(a, b) \
-  (__builtin_riscv_smax8 ((a), (b)))
-#define __rv_umax8(a, b) \
-  (__builtin_riscv_umax8 ((a), (b)))
-#define __rv_kabs8(a) \
-  (__builtin_riscv_kabs8 ((a)))
-#define __rv_sunpkd810(a) \
-  (__builtin_riscv_sunpkd810 ((a)))
-#define __rv_sunpkd820(a) \
-  (__builtin_riscv_sunpkd820 ((a)))
-#define __rv_sunpkd830(a) \
-  (__builtin_riscv_sunpkd830 ((a)))
-#define __rv_sunpkd831(a) \
-  (__builtin_riscv_sunpkd831 ((a)))
-#define __rv_sunpkd832(a) \
-  (__builtin_riscv_sunpkd832 ((a)))
-#define __rv_zunpkd810(a) \
-  (__builtin_riscv_zunpkd810 ((a)))
-#define __rv_zunpkd820(a) \
-  (__builtin_riscv_zunpkd820 ((a)))
-#define __rv_zunpkd830(a) \
-  (__builtin_riscv_zunpkd830 ((a)))
-#define __rv_zunpkd831(a) \
-  (__builtin_riscv_zunpkd831 ((a)))
-#define __rv_zunpkd832(a) \
-  (__builtin_riscv_zunpkd832 ((a)))
-#define __rv_raddw(a, b) \
-  (__builtin_riscv_raddw ((a), (b)))
-#define __rv_uraddw(a, b) \
-  (__builtin_riscv_uraddw ((a), (b)))
-#define __rv_rsubw(a, b) \
-  (__builtin_riscv_rsubw ((a), (b)))
-#define __rv_ursubw(a, b) \
-  (__builtin_riscv_ursubw ((a), (b)))
-#define __rv_sra_u(a, b) \
-  (__builtin_riscv_sra_u ((a), (b)))
-#define __rv_ksllw(a, b) \
-  (__builtin_riscv_ksllw ((a), (b)))
-#define __rv_pkbb16(a, b) \
-  (__builtin_riscv_pkbb16 ((a), (b)))
-#define __rv_pkbt16(a, b) \
-  (__builtin_riscv_pkbt16 ((a), (b)))
-#define __rv_pktb16(a, b) \
-  (__builtin_riscv_pktb16 ((a), (b)))
-#define __rv_pktt16(a, b) \
-  (__builtin_riscv_pktt16 ((a), (b)))
-#define __rv_smmul(a, b) \
-  (__builtin_riscv_smmul ((a), (b)))
-#define __rv_smmul_u(a, b) \
-  (__builtin_riscv_smmul_u ((a), (b)))
-#define __rv_kmmac(r, a, b) \
-  (__builtin_riscv_kmmac ((r), (a), (b)))
-#define __rv_kmmac_u(r, a, b) \
-  (__builtin_riscv_kmmac_u ((r), (a), (b)))
-#define __rv_kmmsb(r, a, b) \
-  (__builtin_riscv_kmmsb ((r), (a), (b)))
-#define __rv_kmmsb_u(r, a, b) \
-  (__builtin_riscv_kmmsb_u ((r), (a), (b)))
-#define __rv_kwmmul(a, b) \
-  (__builtin_riscv_kwmmul ((a), (b)))
-#define __rv_kwmmul_u(a, b) \
-  (__builtin_riscv_kwmmul_u ((a), (b)))
-#define __rv_smmwb(a, b) \
-  (__builtin_riscv_smmwb ((a), (b)))
-#define __rv_smmwb_u(a, b) \
-  (__builtin_riscv_smmwb_u ((a), (b)))
-#define __rv_smmwt(a, b) \
-  (__builtin_riscv_smmwt ((a), (b)))
-#define __rv_smmwt_u(a, b) \
-  (__builtin_riscv_smmwt_u ((a), (b)))
-#define __rv_kmmwb2(a, b) \
-  (__builtin_riscv_kmmwb2 ((a), (b)))
-#define __rv_kmmwb2_u(a, b) \
-  (__builtin_riscv_kmmwb2_u ((a), (b)))
-#define __rv_kmmwt2(a, b) \
-  (__builtin_riscv_kmmwt2 ((a), (b)))
-#define __rv_kmmwt2_u(a, b) \
-  (__builtin_riscv_kmmwt2_u ((a), (b)))
-#define __rv_kmmawb(r, a, b) \
-  (__builtin_riscv_kmmawb ((r), (a), (b)))
-#define __rv_kmmawb_u(r, a, b) \
-  (__builtin_riscv_kmmawb_u ((r), (a), (b)))
-#define __rv_kmmawt(r, a, b) \
-  (__builtin_riscv_kmmawt ((r), (a), (b)))
-#define __rv_kmmawt_u(r, a, b) \
-  (__builtin_riscv_kmmawt_u ((r), (a), (b)))
-#define __rv_kmmawb2(r, a, b) \
-  (__builtin_riscv_kmmawb2 ((r), (a), (b)))
-#define __rv_kmmawb2_u(r, a, b) \
-  (__builtin_riscv_kmmawb2_u ((r), (a), (b)))
-#define __rv_kmmawt2(r, a, b) \
-  (__builtin_riscv_kmmawt2 ((r), (a), (b)))
-#define __rv_kmmawt2_u(r, a, b) \
-  (__builtin_riscv_kmmawt2_u ((r), (a), (b)))
-#define __rv_smbb16(a, b) \
-  (__builtin_riscv_smbb16 ((a), (b)))
-#define __rv_smbt16(a, b) \
-  (__builtin_riscv_smbt16 ((a), (b)))
-#define __rv_smtt16(a, b) \
-  (__builtin_riscv_smtt16 ((a), (b)))
-#define __rv_kmda(a, b) \
-  (__builtin_riscv_kmda ((a), (b)))
-#define __rv_kmxda(a, b) \
-  (__builtin_riscv_kmxda ((a), (b)))
-#define __rv_smds(a, b) \
-  (__builtin_riscv_smds ((a), (b)))
-#define __rv_smdrs(a, b) \
-  (__builtin_riscv_smdrs ((a), (b)))
-#define __rv_smxds(a, b) \
-  (__builtin_riscv_smxds ((a), (b)))
-#define __rv_kmabb(r, a, b) \
-  (__builtin_riscv_kmabb ((r), (a), (b)))
-#define __rv_kmabt(r, a, b) \
-  (__builtin_riscv_kmabt ((r), (a), (b)))
-#define __rv_kmatt(r, a, b) \
-  (__builtin_riscv_kmatt ((r), (a), (b)))
-#define __rv_kmada(r, a, b) \
-  (__builtin_riscv_kmada ((r), (a), (b)))
-#define __rv_kmaxda(r, a, b) \
-  (__builtin_riscv_kmaxda ((r), (a), (b)))
-#define __rv_kmads(r, a, b) \
-  (__builtin_riscv_kmads ((r), (a), (b)))
-#define __rv_kmadrs(r, a, b) \
-  (__builtin_riscv_kmadrs ((r), (a), (b)))
-#define __rv_kmaxds(r, a, b) \
-  (__builtin_riscv_kmaxds ((r), (a), (b)))
-#define __rv_kmsda(r, a, b) \
-  (__builtin_riscv_kmsda ((r), (a), (b)))
-#define __rv_kmsxda(r, a, b) \
-  (__builtin_riscv_kmsxda ((r), (a), (b)))
-#define __rv_bitrev(a, b) \
-  (__builtin_riscv_bitrev ((a), (b)))
-#define __rv_bpick(r, a, b) \
-  (__builtin_riscv_bpick ((r), (a), (b)))
-#define __rv_insb(r, a, b) \
-  (__builtin_riscv_insb ((r), (a), (b)))
-#define __rv_kabsw(a) \
-  (__builtin_riscv_kabsw ((a)))
-#define __rv_kaddw(a, b) \
-  (__builtin_riscv_kaddw ((a), (b)))
-#define __rv_kaddh(a, b) \
-  (__builtin_riscv_kaddh ((a), (b)))
-#define __rv_ksubw(a, b) \
-  (__builtin_riscv_ksubw ((a), (b)))
-#define __rv_ksubh(a, b) \
-  (__builtin_riscv_ksubh ((a), (b)))
-#define __rv_ukaddw(a, b) \
-  (__builtin_riscv_ukaddw ((a), (b)))
-#define __rv_ukaddh(a, b) \
-  (__builtin_riscv_ukaddh ((a), (b)))
-#define __rv_uksubw(a, b) \
-  (__builtin_riscv_uksubw ((a), (b)))
-#define __rv_uksubh(a, b) \
-  (__builtin_riscv_uksubh ((a), (b)))
-#define __rv_kdmbb(a, b) \
-  (__builtin_riscv_kdmbb ((a), (b)))
-#define __rv_kdmbt(a, b) \
-  (__builtin_riscv_kdmbt ((a), (b)))
-#define __rv_kdmtt(a, b) \
-  (__builtin_riscv_kdmtt ((a), (b)))
-#define __rv_khmbb(a, b) \
-  (__builtin_riscv_khmbb ((a), (b)))
-#define __rv_khmbt(a, b) \
-  (__builtin_riscv_khmbt ((a), (b)))
-#define __rv_khmtt(a, b) \
-  (__builtin_riscv_khmtt ((a), (b)))
-#define __rv_kslraw(a, b) \
-  (__builtin_riscv_kslraw ((a), (b)))
-#define __rv_kslraw_u(a, b) \
-  (__builtin_riscv_kslraw_u ((a), (b)))
-#define __rv_ave(a, b) \
-  (__builtin_riscv_ave ((a), (b)))
-#define __rv_maxw(a, b) \
-  (__builtin_riscv_maxw ((a), (b)))
-#define __rv_minw(a, b) \
-  (__builtin_riscv_minw ((a), (b)))
-#define __rv_sra8(a, b) \
-  (__builtin_riscv_sra8 ((a), (b)))
-#define __rv_sra8_u(a, b) \
-  (__builtin_riscv_sra8_u ((a), (b)))
-#define __rv_srl8(a, b) \
-  (__builtin_riscv_srl8 ((a), (b)))
-#define __rv_srl8_u(a, b) \
-  (__builtin_riscv_srl8_u ((a), (b)))
-#define __rv_sll8(a, b) \
-  (__builtin_riscv_sll8 ((a), (b)))
-#define __rv_ksll8(a, b) \
-  (__builtin_riscv_ksll8 ((a), (b)))
-#define __rv_kslra8(a, b) \
-  (__builtin_riscv_kslra8 ((a), (b)))
-#define __rv_kslra8_u(a, b) \
-  (__builtin_riscv_kslra8_u ((a), (b)))
-#define __rv_pbsad(a, b) \
-  (__builtin_riscv_pbsad ((a), (b)))
-#define __rv_pbsada(acc, a, b) \
-  (__builtin_riscv_pbsada ((acc), (a), (b)))
-#define __rv_swap8(a) \
-  (__builtin_riscv_swap8 ((a)))
-#define __rv_swap16(a) \
-  (__builtin_riscv_pkbt16 ((a), (a)))
-#define __rv_sclip8(a, b) \
-  (__builtin_riscv_sclip8 ((a), (b)))
-#define __rv_uclip8(a, b) \
-  (__builtin_riscv_uclip8 ((a), (b)))
-#define __rv_rdov() \
-  (__builtin_riscv_rdov())
-#define __rv_clrov() \
-  (__builtin_riscv_clrov())
-#define __rv_kdmabb(r, a, b) \
-  (__builtin_riscv_kdmabb ((r), (a), (b)))
-#define __rv_kdmabt(r, a, b) \
-  (__builtin_riscv_kdmabt ((r), (a), (b)))
-#define __rv_kdmatt(r, a, b) \
-  (__builtin_riscv_kdmatt ((r), (a), (b)))
-#define __rv_smaqa(r, a, b) \
-  (__builtin_riscv_smaqa ((r), (a), (b)))
-#define __rv_umaqa(r, a, b) \
-  (__builtin_riscv_umaqa ((r), (a), (b)))
-#define __rv_smaqa_su(r, a, b) \
-  (__builtin_riscv_smaqa_su ((r), (a), (b)))
-#define __rv_clrs8(a) \
-  (__builtin_riscv_clrs8 ((a)))
-#define __rv_clrs16(a) \
-  (__builtin_riscv_clrs16 ((a)))
-#define __rv_clrs32(a) \
-  (__builtin_riscv_clrs32 ((a)))
-#define __rv_clz8(a) \
-  (__builtin_riscv_clz8 ((a)))
-#define __rv_clz16(a) \
-  (__builtin_riscv_clz16 ((a)))
-#define __rv_clz32(a) \
-  (__builtin_riscv_clz32 ((a)))
-#define __rv_uclip32(a, imm) \
-  (__builtin_riscv_uclip32 ((a), (imm)))
-#define __rv_sclip32(a, imm) \
-  (__builtin_riscv_sclip32 ((a), (imm)))
-#define __rv_v_khmbb(a, b) \
-  (__builtin_riscv_v_khmbb ((a), (b)))
-#define __rv_v_khmbt(a, b) \
-  (__builtin_riscv_v_khmbt ((a), (b)))
-#define __rv_v_khmtt(a, b) \
-  (__builtin_riscv_v_khmtt ((a), (b)))
-#define __rv_v_kdmbb(a, b) \
-  (__builtin_riscv_v_kdmbb ((a), (b)))
-#define __rv_v_kdmbt(a, b) \
-  (__builtin_riscv_v_kdmbt ((a), (b)))
-#define __rv_v_kdmtt(a, b) \
-  (__builtin_riscv_v_kdmtt ((a), (b)))
 #if __riscv_xlen == 32
-#define __rv_v_uadd16(a, b) \
-  (__builtin_riscv_v_uadd16 ((a), (b)))
-#define __rv_v_sadd16(a, b) \
-  (__builtin_riscv_v_sadd16 ((a), (b)))
-#define __rv_v_radd16(a, b) \
-  (__builtin_riscv_v_radd16 ((a), (b)))
-#define __rv_v_uradd16(a, b) \
-  (__builtin_riscv_v_uradd16 ((a), (b)))
-#define __rv_v_kadd16(a, b) \
-  (__builtin_riscv_v_kadd16 ((a), (b)))
-#define __rv_v_ukadd16(a, b) \
-  (__builtin_riscv_v_ukadd16 ((a), (b)))
-#define __rv_v_usub16(a, b) \
-  (__builtin_riscv_v_usub16 ((a), (b)))
-#define __rv_v_ssub16(a, b) \
-  (__builtin_riscv_v_ssub16 ((a), (b)))
-#define __rv_v_rsub16(a, b) \
-  (__builtin_riscv_v_rsub16 ((a), (b)))
-#define __rv_v_ursub16(a, b) \
-  (__builtin_riscv_v_ursub16 ((a), (b)))
-#define __rv_v_ksub16(a, b) \
-  (__builtin_riscv_v_ksub16 ((a), (b)))
-#define __rv_v_uksub16(a, b) \
-  (__builtin_riscv_v_uksub16 ((a), (b)))
-#define __rv_v_ucras16(a, b) \
-  (__builtin_riscv_v_ucras16 ((a), (b)))
-#define __rv_v_scras16(a, b) \
-  (__builtin_riscv_v_scras16 ((a), (b)))
-#define __rv_v_rcras16(a, b) \
-  (__builtin_riscv_v_rcras16 ((a), (b)))
-#define __rv_v_urcras16(a, b) \
-  (__builtin_riscv_v_urcras16 ((a), (b)))
-#define __rv_v_kcras16(a, b) \
-  (__builtin_riscv_v_kcras16 ((a), (b)))
-#define __rv_v_ukcras16(a, b) \
-  (__builtin_riscv_v_ukcras16 ((a), (b)))
-#define __rv_v_ucrsa16(a, b) \
-  (__builtin_riscv_v_ucrsa16 ((a), (b)))
-#define __rv_v_scrsa16(a, b) \
-  (__builtin_riscv_v_scrsa16 ((a), (b)))
-#define __rv_v_rcrsa16(a, b) \
-  (__builtin_riscv_v_rcrsa16 ((a), (b)))
-#define __rv_v_urcrsa16(a, b) \
-  (__builtin_riscv_v_urcrsa16 ((a), (b)))
-#define __rv_v_kcrsa16(a, b) \
-  (__builtin_riscv_v_kcrsa16 ((a), (b)))
-#define __rv_v_ukcrsa16(a, b) \
-  (__builtin_riscv_v_ukcrsa16 ((a), (b)))
-#define __rv_v_ustas16(a, b) \
-  (__builtin_riscv_v_ustas16 ((a), (b)))
-#define __rv_v_sstas16(a, b) \
-  (__builtin_riscv_v_sstas16 ((a), (b)))
-#define __rv_v_rstas16(a, b) \
-  (__builtin_riscv_v_rstas16 ((a), (b)))
-#define __rv_v_urstas16(a, b) \
-  (__builtin_riscv_v_urstas16 ((a), (b)))
-#define __rv_v_kstas16(a, b) \
-  (__builtin_riscv_v_kstas16 ((a), (b)))
-#define __rv_v_ukstas16(a, b) \
-  (__builtin_riscv_v_ukstas16 ((a), (b)))
-#define __rv_v_ustsa16(a, b) \
-  (__builtin_riscv_v_ustsa16 ((a), (b)))
-#define __rv_v_sstsa16(a, b) \
-  (__builtin_riscv_v_sstsa16 ((a), (b)))
-#define __rv_v_rstsa16(a, b) \
-  (__builtin_riscv_v_rstsa16 ((a), (b)))
-#define __rv_v_urstsa16(a, b) \
-  (__builtin_riscv_v_urstsa16 ((a), (b)))
-#define __rv_v_kstsa16(a, b) \
-  (__builtin_riscv_v_kstsa16 ((a), (b)))
-#define __rv_v_ukstsa16(a, b) \
-  (__builtin_riscv_v_ukstsa16 ((a), (b)))
-#define __rv_v_uadd8(a, b) \
-  (__builtin_riscv_v_uadd8 ((a), (b)))
-#define __rv_v_sadd8(a, b) \
-  (__builtin_riscv_v_sadd8 ((a), (b)))
-#define __rv_v_radd8(a, b) \
-  (__builtin_riscv_v_radd8 ((a), (b)))
-#define __rv_v_uradd8(a, b) \
-  (__builtin_riscv_v_uradd8 ((a), (b)))
-#define __rv_v_kadd8(a, b) \
-  (__builtin_riscv_v_kadd8 ((a), (b)))
-#define __rv_v_ukadd8(a, b) \
-  (__builtin_riscv_v_ukadd8 ((a), (b)))
-#define __rv_v_usub8(a, b) \
-  (__builtin_riscv_v_usub8 ((a), (b)))
-#define __rv_v_ssub8(a, b) \
-  (__builtin_riscv_v_ssub8 ((a), (b)))
-#define __rv_v_rsub8(a, b) \
-  (__builtin_riscv_v_rsub8 ((a), (b)))
-#define __rv_v_ursub8(a, b) \
-  (__builtin_riscv_v_ursub8 ((a), (b)))
-#define __rv_v_ksub8(a, b) \
-  (__builtin_riscv_v_ksub8 ((a), (b)))
-#define __rv_v_uksub8(a, b) \
-  (__builtin_riscv_v_uksub8 ((a), (b)))
-#define __rv_v_sra16(a, b) \
-  (__builtin_riscv_v_sra16 ((a), (b)))
-#define __rv_v_sra16_u(a, b) \
-  (__builtin_riscv_v_sra16_u ((a), (b)))
-#define __rv_v_srl16(a, b) \
-  (__builtin_riscv_v_srl16 ((a), (b)))
-#define __rv_v_srl16_u(a, b) \
-  (__builtin_riscv_v_srl16_u ((a), (b)))
-#define __rv_v_sll16(a, b) \
-  (__builtin_riscv_v_sll16 ((a), (b)))
-#define __rv_v_ksll16(a, b) \
-  (__builtin_riscv_v_ksll16 ((a), (b)))
-#define __rv_v_kslra16(a, b) \
-  (__builtin_riscv_v_kslra16 ((a), (b)))
-#define __rv_v_kslra16_u(a, b) \
-  (__builtin_riscv_v_kslra16_u ((a), (b)))
-#define __rv_v_scmpeq16(a, b) \
-  (__builtin_riscv_v_scmpeq16 ((a), (b)))
-#define __rv_v_ucmpeq16(a, b) \
-  (__builtin_riscv_v_ucmpeq16 ((a), (b)))
-#define __rv_v_scmplt16(a, b) \
-  (__builtin_riscv_v_scmplt16 ((a), (b)))
-#define __rv_v_scmple16(a, b) \
-  (__builtin_riscv_v_scmple16 ((a), (b)))
-#define __rv_v_ucmplt16(a, b) \
-  (__builtin_riscv_v_ucmplt16 ((a), (b)))
-#define __rv_v_ucmple16(a, b) \
-  (__builtin_riscv_v_ucmple16 ((a), (b)))
-#define __rv_v_scmpeq8(a, b) \
-  (__builtin_riscv_v_scmpeq8 ((a), (b)))
-#define __rv_v_ucmpeq8(a, b) \
-  (__builtin_riscv_v_ucmpeq8 ((a), (b)))
-#define __rv_v_scmplt8(a, b) \
-  (__builtin_riscv_v_scmplt8 ((a), (b)))
-#define __rv_v_scmple8(a, b) \
-  (__builtin_riscv_v_scmple8 ((a), (b)))
-#define __rv_v_ucmplt8(a, b) \
-  (__builtin_riscv_v_ucmplt8 ((a), (b)))
-#define __rv_v_ucmple8(a, b) \
-  (__builtin_riscv_v_ucmple8 ((a), (b)))
-#define __rv_v_smin16(a, b) \
-  (__builtin_riscv_v_smin16 ((a), (b)))
-#define __rv_v_umin16(a, b) \
-  (__builtin_riscv_v_umin16 ((a), (b)))
-#define __rv_v_smax16(a, b) \
-  (__builtin_riscv_v_smax16 ((a), (b)))
-#define __rv_v_umax16(a, b) \
-  (__builtin_riscv_v_umax16 ((a), (b)))
-#define __rv_v_sclip16(a, b) \
-  (__builtin_riscv_v_sclip16 ((a), (b)))
-#define __rv_v_uclip16(a, b) \
-  (__builtin_riscv_v_uclip16 ((a), (b)))
-#define __rv_v_khm16(a, b) \
-  (__builtin_riscv_v_khm16 ((a), (b)))
-#define __rv_v_khmx16(a, b) \
-  (__builtin_riscv_v_khmx16 ((a), (b)))
-#define __rv_v_khm8(a, b) \
-  (__builtin_riscv_v_khm8 ((a), (b)))
-#define __rv_v_khmx8(a, b) \
-  (__builtin_riscv_v_khmx8 ((a), (b)))
-#define __rv_v_kabs16(a) \
-  (__builtin_riscv_v_kabs16 ((a)))
-#define __rv_v_smin8(a, b) \
-  (__builtin_riscv_v_smin8 ((a), (b)))
-#define __rv_v_umin8(a, b) \
-  (__builtin_riscv_v_umin8 ((a), (b)))
-#define __rv_v_smax8(a, b) \
-  (__builtin_riscv_v_smax8 ((a), (b)))
-#define __rv_v_umax8(a, b) \
-  (__builtin_riscv_v_umax8 ((a), (b)))
-#define __rv_v_kabs8(a) \
-  (__builtin_riscv_v_kabs8 ((a)))
-#define __rv_v_sunpkd810(a) \
-  (__builtin_riscv_v_sunpkd810 ((a)))
-#define __rv_v_sunpkd820(a) \
-  (__builtin_riscv_v_sunpkd820 ((a)))
-#define __rv_v_sunpkd830(a) \
-  (__builtin_riscv_v_sunpkd830 ((a)))
-#define __rv_v_sunpkd831(a) \
-  (__builtin_riscv_v_sunpkd831 ((a)))
-#define __rv_v_sunpkd832(a) \
-  (__builtin_riscv_v_sunpkd832 ((a)))
-#define __rv_v_zunpkd810(a) \
-  (__builtin_riscv_v_zunpkd810 ((a)))
-#define __rv_v_zunpkd820(a) \
-  (__builtin_riscv_v_zunpkd820 ((a)))
-#define __rv_v_zunpkd830(a) \
-  (__builtin_riscv_v_zunpkd830 ((a)))
-#define __rv_v_zunpkd831(a) \
-  (__builtin_riscv_v_zunpkd831 ((a)))
-#define __rv_v_zunpkd832(a) \
-  (__builtin_riscv_v_zunpkd832 ((a)))
-#define __rv_v_pkbb16(a, b) \
-  (__builtin_riscv_v_pkbb16 ((a), (b)))
-#define __rv_v_pkbt16(a, b) \
-  (__builtin_riscv_v_pkbt16 ((a), (b)))
-#define __rv_v_pktb16(a, b) \
-  (__builtin_riscv_v_pktb16 ((a), (b)))
-#define __rv_v_pktt16(a, b) \
-  (__builtin_riscv_v_pktt16 ((a), (b)))
-#define __rv_v_smmwb(a, b) \
-  (__builtin_riscv_v_smmwb ((a), (b)))
-#define __rv_v_smmwb_u(a, b) \
-  (__builtin_riscv_v_smmwb_u ((a), (b)))
-#define __rv_v_smmwt(a, b) \
-  (__builtin_riscv_v_smmwt ((a), (b)))
-#define __rv_v_smmwt_u(a, b) \
-  (__builtin_riscv_v_smmwt_u ((a), (b)))
-#define __rv_v_kmmwb2(a, b) \
-  (__builtin_riscv_v_kmmwb2 ((a), (b)))
-#define __rv_v_kmmwb2_u(a, b) \
-  (__builtin_riscv_v_kmmwb2_u ((a), (b)))
-#define __rv_v_kmmwt2(a, b) \
-  (__builtin_riscv_v_kmmwt2 ((a), (b)))
-#define __rv_v_kmmwt2_u(a, b) \
-  (__builtin_riscv_v_kmmwt2_u ((a), (b)))
-#define __rv_v_kmmawb(r, a, b) \
-  (__builtin_riscv_v_kmmawb ((r), (a), (b)))
-#define __rv_v_kmmawb_u(r, a, b) \
-  (__builtin_riscv_v_kmmawb_u ((r), (a), (b)))
-#define __rv_v_kmmawt(r, a, b) \
-  (__builtin_riscv_v_kmmawt ((r), (a), (b)))
-#define __rv_v_kmmawt_u(r, a, b) \
-  (__builtin_riscv_v_kmmawt_u ((r), (a), (b)))
-#define __rv_v_kmmawb2(r, a, b) \
-  (__builtin_riscv_v_kmmawb2 ((r), (a), (b)))
-#define __rv_v_kmmawb2_u(r, a, b) \
-  (__builtin_riscv_v_kmmawb2_u ((r), (a), (b)))
-#define __rv_v_kmmawt2(r, a, b) \
-  (__builtin_riscv_v_kmmawt2 ((r), (a), (b)))
-#define __rv_v_kmmawt2_u(r, a, b) \
-  (__builtin_riscv_v_kmmawt2_u ((r), (a), (b)))
-#define __rv_v_smbb16(a, b) \
-  (__builtin_riscv_v_smbb16 ((a), (b)))
-#define __rv_v_smbt16(a, b) \
-  (__builtin_riscv_v_smbt16 ((a), (b)))
-#define __rv_v_smtt16(a, b) \
-  (__builtin_riscv_v_smtt16 ((a), (b)))
-#define __rv_v_kmda(a, b) \
-  (__builtin_riscv_v_kmda ((a), (b)))
-#define __rv_v_kmxda(a, b) \
-  (__builtin_riscv_v_kmxda ((a), (b)))
-#define __rv_v_smds(a, b) \
-  (__builtin_riscv_v_smds ((a), (b)))
-#define __rv_v_smdrs(a, b) \
-  (__builtin_riscv_v_smdrs ((a), (b)))
-#define __rv_v_smxds(a, b) \
-  (__builtin_riscv_v_smxds ((a), (b)))
-#define __rv_v_kmabb(r, a, b) \
-  (__builtin_riscv_v_kmabb ((r), (a), (b)))
-#define __rv_v_kmabt(r, a, b) \
-  (__builtin_riscv_v_kmabt ((r), (a), (b)))
-#define __rv_v_kmatt(r, a, b) \
-  (__builtin_riscv_v_kmatt ((r), (a), (b)))
-#define __rv_v_kmada(r, a, b) \
-  (__builtin_riscv_v_kmada ((r), (a), (b)))
-#define __rv_v_kmaxda(r, a, b) \
-  (__builtin_riscv_v_kmaxda ((r), (a), (b)))
-#define __rv_v_kmads(r, a, b) \
-  (__builtin_riscv_v_kmads ((r), (a), (b)))
-#define __rv_v_kmadrs(r, a, b) \
-  (__builtin_riscv_v_kmadrs ((r), (a), (b)))
-#define __rv_v_kmaxds(r, a, b) \
-  (__builtin_riscv_v_kmaxds ((r), (a), (b)))
-#define __rv_v_kmsda(r, a, b) \
-  (__builtin_riscv_v_kmsda ((r), (a), (b)))
-#define __rv_v_kmsxda(r, a, b) \
-  (__builtin_riscv_v_kmsxda ((r), (a), (b)))
-#define __rv_v_sra8(a, b) \
-  (__builtin_riscv_v_sra8 ((a), (b)))
-#define __rv_v_sra8_u(a, b) \
-  (__builtin_riscv_v_sra8_u ((a), (b)))
-#define __rv_v_srl8(a, b) \
-  (__builtin_riscv_v_srl8 ((a), (b)))
-#define __rv_v_srl8_u(a, b) \
-  (__builtin_riscv_v_srl8_u ((a), (b)))
-#define __rv_v_sll8(a, b) \
-  (__builtin_riscv_v_sll8 ((a), (b)))
-#define __rv_v_ksll8(a, b) \
-  (__builtin_riscv_v_ksll8 ((a), (b)))
-#define __rv_v_kslra8(a, b) \
-  (__builtin_riscv_v_kslra8 ((a), (b)))
-#define __rv_v_kslra8_u(a, b) \
-  (__builtin_riscv_v_kslra8_u ((a), (b)))
-#define __rv_v_swap8(a) \
-  (__builtin_riscv_v_swap8 ((a)))
-#define __rv_v_swap16(a) \
-  (__builtin_riscv_v_pkbt16 ((a), (a)))
-#define __rv_v_sclip8(a, b) \
-  (__builtin_riscv_v_sclip8 ((a), (b)))
-#define __rv_v_uclip8(a, b) \
-  (__builtin_riscv_v_uclip8 ((a), (b)))
-#define __rv_v_kdmabb(r, a, b) \
-  (__builtin_riscv_v_kdmabb ((r), (a), (b)))
-#define __rv_v_kdmabt(r, a, b) \
-  (__builtin_riscv_v_kdmabt ((r), (a), (b)))
-#define __rv_v_kdmatt(r, a, b) \
-  (__builtin_riscv_v_kdmatt ((r), (a), (b)))
-#define __rv_v_smaqa(r, a, b) \
-  (__builtin_riscv_v_smaqa ((r), (a), (b)))
-#define __rv_v_umaqa(r, a, b) \
-  (__builtin_riscv_v_umaqa ((r), (a), (b)))
-#define __rv_v_smaqa_su(r, a, b) \
-  (__builtin_riscv_v_smaqa_su ((r), (a), (b)))
-#define __rv_v_clrs8(a) \
-  (__builtin_riscv_v_clrs8 ((a)))
-#define __rv_v_clrs16(a) \
-  (__builtin_riscv_v_clrs16 ((a)))
-#define __rv_v_clo8(a) \
-  (__builtin_riscv_v_clo8 ((a)))
-#define __rv_v_clo16(a) \
-  (__builtin_riscv_v_clo16 ((a)))
-#define __rv_v_clz8(a) \
-  (__builtin_riscv_v_clz8 ((a)))
-#define __rv_v_clz16(a) \
-  (__builtin_riscv_v_clz16 ((a)))
-#define __rv_v_pbsad(a, b) \
-  (__builtin_riscv_v_pbsad ((a), (b)))
-#define __rv_v_pbsada(acc, a, b) \
-  (__builtin_riscv_v_pbsada ((acc), (a), (b)))
+typedef int32_t int32xN_t;
+typedef uint32_t uint32xN_t;
+typedef uint16x2_t uint16xN_t;
+typedef int16x2_t int16xN_t;
+typedef uint8x4_t uint8xN_t;
+typedef int8x4_t int8xN_t;
 #else
-#define __rv_v_uadd16(a, b) \
-  (__builtin_riscv_v64_uadd16 ((a), (b)))
-#define __rv_v_sadd16(a, b) \
-  (__builtin_riscv_v64_sadd16 ((a), (b)))
-#define __rv_v_radd16(a, b) \
-  (__builtin_riscv_v64_radd16 ((a), (b)))
-#define __rv_v_uradd16(a, b) \
-  (__builtin_riscv_v64_uradd16 ((a), (b)))
-#define __rv_v_kadd16(a, b) \
-  (__builtin_riscv_v64_kadd16 ((a), (b)))
-#define __rv_v_ukadd16(a, b) \
-  (__builtin_riscv_v64_ukadd16 ((a), (b)))
-#define __rv_v_usub16(a, b) \
-  (__builtin_riscv_v64_usub16 ((a), (b)))
-#define __rv_v_ssub16(a, b) \
-  (__builtin_riscv_v64_ssub16 ((a), (b)))
-#define __rv_v_rsub16(a, b) \
-  (__builtin_riscv_v64_rsub16 ((a), (b)))
-#define __rv_v_ursub16(a, b) \
-  (__builtin_riscv_v64_ursub16 ((a), (b)))
-#define __rv_v_ksub16(a, b) \
-  (__builtin_riscv_v64_ksub16 ((a), (b)))
-#define __rv_v_uksub16(a, b) \
-  (__builtin_riscv_v64_uksub16 ((a), (b)))
-#define __rv_v_ucras16(a, b) \
-  (__builtin_riscv_v64_ucras16 ((a), (b)))
-#define __rv_v_scras16(a, b) \
-  (__builtin_riscv_v64_scras16 ((a), (b)))
-#define __rv_v_rcras16(a, b) \
-  (__builtin_riscv_v64_rcras16 ((a), (b)))
-#define __rv_v_urcras16(a, b) \
-  (__builtin_riscv_v64_urcras16 ((a), (b)))
-#define __rv_v_kcras16(a, b) \
-  (__builtin_riscv_v64_kcras16 ((a), (b)))
-#define __rv_v_ukcras16(a, b) \
-  (__builtin_riscv_v64_ukcras16 ((a), (b)))
-#define __rv_v_ucrsa16(a, b) \
-  (__builtin_riscv_v64_ucrsa16 ((a), (b)))
-#define __rv_v_scrsa16(a, b) \
-  (__builtin_riscv_v64_scrsa16 ((a), (b)))
-#define __rv_v_rcrsa16(a, b) \
-  (__builtin_riscv_v64_rcrsa16 ((a), (b)))
-#define __rv_v_urcrsa16(a, b) \
-  (__builtin_riscv_v64_urcrsa16 ((a), (b)))
-#define __rv_v_kcrsa16(a, b) \
-  (__builtin_riscv_v64_kcrsa16 ((a), (b)))
-#define __rv_v_ukcrsa16(a, b) \
-  (__builtin_riscv_v64_ukcrsa16 ((a), (b)))
-#define __rv_v_ustas16(a, b) \
-  (__builtin_riscv_v64_ustas16 ((a), (b)))
-#define __rv_v_sstas16(a, b) \
-  (__builtin_riscv_v64_sstas16 ((a), (b)))
-#define __rv_v_rstas16(a, b) \
-  (__builtin_riscv_v64_rstas16 ((a), (b)))
-#define __rv_v_urstas16(a, b) \
-  (__builtin_riscv_v64_urstas16 ((a), (b)))
-#define __rv_v_kstas16(a, b) \
-  (__builtin_riscv_v64_kstas16 ((a), (b)))
-#define __rv_v_ukstas16(a, b) \
-  (__builtin_riscv_v64_ukstas16 ((a), (b)))
-#define __rv_v_ustsa16(a, b) \
-  (__builtin_riscv_v64_ustsa16 ((a), (b)))
-#define __rv_v_sstsa16(a, b) \
-  (__builtin_riscv_v64_sstsa16 ((a), (b)))
-#define __rv_v_rstsa16(a, b) \
-  (__builtin_riscv_v64_rstsa16 ((a), (b)))
-#define __rv_v_urstsa16(a, b) \
-  (__builtin_riscv_v64_urstsa16 ((a), (b)))
-#define __rv_v_kstsa16(a, b) \
-  (__builtin_riscv_v64_kstsa16 ((a), (b)))
-#define __rv_v_ukstsa16(a, b) \
-  (__builtin_riscv_v64_ukstsa16 ((a), (b)))
-#define __rv_v_uadd8(a, b) \
-  (__builtin_riscv_v64_uadd8 ((a), (b)))
-#define __rv_v_sadd8(a, b) \
-  (__builtin_riscv_v64_sadd8 ((a), (b)))
-#define __rv_v_radd8(a, b) \
-  (__builtin_riscv_v64_radd8 ((a), (b)))
-#define __rv_v_uradd8(a, b) \
-  (__builtin_riscv_v64_uradd8 ((a), (b)))
-#define __rv_v_kadd8(a, b) \
-  (__builtin_riscv_v64_kadd8 ((a), (b)))
-#define __rv_v_ukadd8(a, b) \
-  (__builtin_riscv_v64_ukadd8 ((a), (b)))
-#define __rv_v_usub8(a, b) \
-  (__builtin_riscv_v64_usub8 ((a), (b)))
-#define __rv_v_ssub8(a, b) \
-  (__builtin_riscv_v64_ssub8 ((a), (b)))
-#define __rv_v_rsub8(a, b) \
-  (__builtin_riscv_v64_rsub8 ((a), (b)))
-#define __rv_v_ursub8(a, b) \
-  (__builtin_riscv_v64_ursub8 ((a), (b)))
-#define __rv_v_ksub8(a, b) \
-  (__builtin_riscv_v64_ksub8 ((a), (b)))
-#define __rv_v_uksub8(a, b) \
-  (__builtin_riscv_v64_uksub8 ((a), (b)))
-#define __rv_v_sra16(a, b) \
-  (__builtin_riscv_v64_sra16 ((a), (b)))
-#define __rv_v_sra16_u(a, b) \
-  (__builtin_riscv_v64_sra16_u ((a), (b)))
-#define __rv_v_srl16(a, b) \
-  (__builtin_riscv_v64_srl16 ((a), (b)))
-#define __rv_v_srl16_u(a, b) \
-  (__builtin_riscv_v64_srl16_u ((a), (b)))
-#define __rv_v_sll16(a, b) \
-  (__builtin_riscv_v64_sll16 ((a), (b)))
-#define __rv_v_ksll16(a, b) \
-  (__builtin_riscv_v64_ksll16 ((a), (b)))
-#define __rv_v_kslra16(a, b) \
-  (__builtin_riscv_v64_kslra16 ((a), (b)))
-#define __rv_v_kslra16_u(a, b) \
-  (__builtin_riscv_v64_kslra16_u ((a), (b)))
-#define __rv_v_scmpeq16(a, b) \
-  (__builtin_riscv_v64_scmpeq16 ((a), (b)))
-#define __rv_v_ucmpeq16(a, b) \
-  (__builtin_riscv_v64_ucmpeq16 ((a), (b)))
-#define __rv_v_scmplt16(a, b) \
-  (__builtin_riscv_v64_scmplt16 ((a), (b)))
-#define __rv_v_scmple16(a, b) \
-  (__builtin_riscv_v64_scmple16 ((a), (b)))
-#define __rv_v_ucmplt16(a, b) \
-  (__builtin_riscv_v64_ucmplt16 ((a), (b)))
-#define __rv_v_ucmple16(a, b) \
-  (__builtin_riscv_v64_ucmple16 ((a), (b)))
-#define __rv_v_scmpeq8(a, b) \
-  (__builtin_riscv_v64_scmpeq8 ((a), (b)))
-#define __rv_v_ucmpeq8(a, b) \
-  (__builtin_riscv_v64_ucmpeq8 ((a), (b)))
-#define __rv_v_scmplt8(a, b) \
-  (__builtin_riscv_v64_scmplt8 ((a), (b)))
-#define __rv_v_scmple8(a, b) \
-  (__builtin_riscv_v64_scmple8 ((a), (b)))
-#define __rv_v_ucmplt8(a, b) \
-  (__builtin_riscv_v64_ucmplt8 ((a), (b)))
-#define __rv_v_ucmple8(a, b) \
-  (__builtin_riscv_v64_ucmple8 ((a), (b)))
-#define __rv_v_smin16(a, b) \
-  (__builtin_riscv_v64_smin16 ((a), (b)))
-#define __rv_v_umin16(a, b) \
-  (__builtin_riscv_v64_umin16 ((a), (b)))
-#define __rv_v_smax16(a, b) \
-  (__builtin_riscv_v64_smax16 ((a), (b)))
-#define __rv_v_umax16(a, b) \
-  (__builtin_riscv_v64_umax16 ((a), (b)))
-#define __rv_v_sclip16(a, b) \
-  (__builtin_riscv_v64_sclip16 ((a), (b)))
-#define __rv_v_uclip16(a, b) \
-  (__builtin_riscv_v64_uclip16 ((a), (b)))
-#define __rv_v_khm16(a, b) \
-  (__builtin_riscv_v64_khm16 ((a), (b)))
-#define __rv_v_khmx16(a, b) \
-  (__builtin_riscv_v64_khmx16 ((a), (b)))
-#define __rv_v_khm8(a, b) \
-  (__builtin_riscv_v64_khm8 ((a), (b)))
-#define __rv_v_khmx8(a, b) \
-  (__builtin_riscv_v64_khmx8 ((a), (b)))
-#define __rv_v_kabs16(a) \
-  (__builtin_riscv_v64_kabs16 ((a)))
-#define __rv_v_smin8(a, b) \
-  (__builtin_riscv_v64_smin8 ((a), (b)))
-#define __rv_v_umin8(a, b) \
-  (__builtin_riscv_v64_umin8 ((a), (b)))
-#define __rv_v_smax8(a, b) \
-  (__builtin_riscv_v64_smax8 ((a), (b)))
-#define __rv_v_umax8(a, b) \
-  (__builtin_riscv_v64_umax8 ((a), (b)))
-#define __rv_v_kabs8(a) \
-  (__builtin_riscv_v64_kabs8 ((a)))
-#define __rv_v_sunpkd810(a) \
-  (__builtin_riscv_v64_sunpkd810 ((a)))
-#define __rv_v_sunpkd820(a) \
-  (__builtin_riscv_v64_sunpkd820 ((a)))
-#define __rv_v_sunpkd830(a) \
-  (__builtin_riscv_v64_sunpkd830 ((a)))
-#define __rv_v_sunpkd831(a) \
-  (__builtin_riscv_v64_sunpkd831 ((a)))
-#define __rv_v_sunpkd832(a) \
-  (__builtin_riscv_v64_sunpkd832 ((a)))
-#define __rv_v_zunpkd810(a) \
-  (__builtin_riscv_v64_zunpkd810 ((a)))
-#define __rv_v_zunpkd820(a) \
-  (__builtin_riscv_v64_zunpkd820 ((a)))
-#define __rv_v_zunpkd830(a) \
-  (__builtin_riscv_v64_zunpkd830 ((a)))
-#define __rv_v_zunpkd831(a) \
-  (__builtin_riscv_v64_zunpkd831 ((a)))
-#define __rv_v_zunpkd832(a) \
-  (__builtin_riscv_v64_zunpkd832 ((a)))
-#define __rv_v_pkbb16(a, b) \
-  (__builtin_riscv_v64_pkbb16 ((a), (b)))
-#define __rv_v_pkbt16(a, b) \
-  (__builtin_riscv_v64_pkbt16 ((a), (b)))
-#define __rv_v_pktb16(a, b) \
-  (__builtin_riscv_v64_pktb16 ((a), (b)))
-#define __rv_v_pktt16(a, b) \
-  (__builtin_riscv_v64_pktt16 ((a), (b)))
-#define __rv_v_smmwb(a, b) \
-  (__builtin_riscv_v64_smmwb ((a), (b)))
-#define __rv_v_smmwb_u(a, b) \
-  (__builtin_riscv_v64_smmwb_u ((a), (b)))
-#define __rv_v_smmwt(a, b) \
-  (__builtin_riscv_v64_smmwt ((a), (b)))
-#define __rv_v_smmwt_u(a, b) \
-  (__builtin_riscv_v64_smmwt_u ((a), (b)))
-#define __rv_v_kmmwb2(a, b) \
-  (__builtin_riscv_v64_kmmwb2 ((a), (b)))
-#define __rv_v_kmmwb2_u(a, b) \
-  (__builtin_riscv_v64_kmmwb2_u ((a), (b)))
-#define __rv_v_kmmwt2(a, b) \
-  (__builtin_riscv_v64_kmmwt2 ((a), (b)))
-#define __rv_v_kmmwt2_u(a, b) \
-  (__builtin_riscv_v64_kmmwt2_u ((a), (b)))
-#define __rv_v_kmmawb(r, a, b) \
-  (__builtin_riscv_v64_kmmawb ((r), (a), (b)))
-#define __rv_v_kmmawb_u(r, a, b) \
-  (__builtin_riscv_v64_kmmawb_u ((r), (a), (b)))
-#define __rv_v_kmmawt(r, a, b) \
-  (__builtin_riscv_v64_kmmawt ((r), (a), (b)))
-#define __rv_v_kmmawt_u(r, a, b) \
-  (__builtin_riscv_v64_kmmawt_u ((r), (a), (b)))
-#define __rv_v_kmmawb2(r, a, b) \
-  (__builtin_riscv_v64_kmmawb2 ((r), (a), (b)))
-#define __rv_v_kmmawb2_u(r, a, b) \
-  (__builtin_riscv_v64_kmmawb2_u ((r), (a), (b)))
-#define __rv_v_kmmawt2(r, a, b) \
-  (__builtin_riscv_v64_kmmawt2 ((r), (a), (b)))
-#define __rv_v_kmmawt2_u(r, a, b) \
-  (__builtin_riscv_v64_kmmawt2_u ((r), (a), (b)))
-#define __rv_v_smbb16(a, b) \
-  (__builtin_riscv_v64_smbb16 ((a), (b)))
-#define __rv_v_smbt16(a, b) \
-  (__builtin_riscv_v64_smbt16 ((a), (b)))
-#define __rv_v_smtt16(a, b) \
-  (__builtin_riscv_v64_smtt16 ((a), (b)))
-#define __rv_v_kmda(a, b) \
-  (__builtin_riscv_v64_kmda ((a), (b)))
-#define __rv_v_kmxda(a, b) \
-  (__builtin_riscv_v64_kmxda ((a), (b)))
-#define __rv_v_smds(a, b) \
-  (__builtin_riscv_v64_smds ((a), (b)))
-#define __rv_v_smdrs(a, b) \
-  (__builtin_riscv_v64_smdrs ((a), (b)))
-#define __rv_v_smxds(a, b) \
-  (__builtin_riscv_v64_smxds ((a), (b)))
-#define __rv_v_kmabb(r, a, b) \
-  (__builtin_riscv_v64_kmabb ((r), (a), (b)))
-#define __rv_v_kmabt(r, a, b) \
-  (__builtin_riscv_v64_kmabt ((r), (a), (b)))
-#define __rv_v_kmatt(r, a, b) \
-  (__builtin_riscv_v64_kmatt ((r), (a), (b)))
-#define __rv_v_kmada(r, a, b) \
-  (__builtin_riscv_v64_kmada ((r), (a), (b)))
-#define __rv_v_kmaxda(r, a, b) \
-  (__builtin_riscv_v64_kmaxda ((r), (a), (b)))
-#define __rv_v_kmads(r, a, b) \
-  (__builtin_riscv_v64_kmads ((r), (a), (b)))
-#define __rv_v_kmadrs(r, a, b) \
-  (__builtin_riscv_v64_kmadrs ((r), (a), (b)))
-#define __rv_v_kmaxds(r, a, b) \
-  (__builtin_riscv_v64_kmaxds ((r), (a), (b)))
-#define __rv_v_kmsda(r, a, b) \
-  (__builtin_riscv_v64_kmsda ((r), (a), (b)))
-#define __rv_v_kmsxda(r, a, b) \
-  (__builtin_riscv_v64_kmsxda ((r), (a), (b)))
-#define __rv_v_sra8(a, b) \
-  (__builtin_riscv_v64_sra8 ((a), (b)))
-#define __rv_v_sra8_u(a, b) \
-  (__builtin_riscv_v64_sra8_u ((a), (b)))
-#define __rv_v_srl8(a, b) \
-  (__builtin_riscv_v64_srl8 ((a), (b)))
-#define __rv_v_srl8_u(a, b) \
-  (__builtin_riscv_v64_srl8_u ((a), (b)))
-#define __rv_v_sll8(a, b) \
-  (__builtin_riscv_v64_sll8 ((a), (b)))
-#define __rv_v_ksll8(a, b) \
-  (__builtin_riscv_v64_ksll8 ((a), (b)))
-#define __rv_v_kslra8(a, b) \
-  (__builtin_riscv_v64_kslra8 ((a), (b)))
-#define __rv_v_kslra8_u(a, b) \
-  (__builtin_riscv_v64_kslra8_u ((a), (b)))
-#define __rv_v_sclip8(a, b) \
-  (__builtin_riscv_v64_sclip8 ((a), (b)))
-#define __rv_v_uclip8(a, b) \
-  (__builtin_riscv_v64_uclip8 ((a), (b)))
-#define __rv_v_kdmabb(r, a, b) \
-  (__builtin_riscv_v64_kdmabb ((r), (a), (b)))
-#define __rv_v_kdmabt(r, a, b) \
-  (__builtin_riscv_v64_kdmabt ((r), (a), (b)))
-#define __rv_v_kdmatt(r, a, b) \
-  (__builtin_riscv_v64_kdmatt ((r), (a), (b)))
-#define __rv_v_kdmabb16(r, a, b) \
-  (__builtin_riscv_v64_kdmabb16 ((r), (a), (b)))
-#define __rv_v_kdmabt16(r, a, b) \
-  (__builtin_riscv_v64_kdmabt16 ((r), (a), (b)))
-#define __rv_v_kdmatt16(r, a, b) \
-  (__builtin_riscv_v64_kdmatt16 ((r), (a), (b)))
-#define __rv_v_smaqa(r, a, b) \
-  (__builtin_riscv_v64_smaqa ((r), (a), (b)))
-#define __rv_v_umaqa(r, a, b) \
-  (__builtin_riscv_v64_umaqa ((r), (a), (b)))
-#define __rv_v_smaqa_su(r, a, b) \
-  (__builtin_riscv_v64_smaqa_su ((r), (a), (b)))
-#define __rv_v_clrs8(a) \
-  (__builtin_riscv_v64_clrs8 ((a)))
-#define __rv_v_clrs16(a) \
-  (__builtin_riscv_v64_clrs16 ((a)))
-#define __rv_v_clrs32(a) \
-  (__builtin_riscv_v64_clrs32 ((a)))
-#define __rv_v_clo8(a) \
-  (__builtin_riscv_v64_clo8 ((a)))
-#define __rv_v_clo16(a) \
-  (__builtin_riscv_v64_clo16 ((a)))
-#define __rv_v_clo32(a) \
-  (__builtin_riscv_v64_clo32 ((a)))
-#define __rv_v_clz8(a) \
-  (__builtin_riscv_v64_clz8 ((a)))
-#define __rv_v_clz16(a) \
-  (__builtin_riscv_v64_clz16 ((a)))
-#define __rv_v_clz32(a) \
-  (__builtin_riscv_v64_clz32 ((a)))
-#define __rv_v_swap8(a) \
-  (__builtin_riscv_v64_swap8 ((a)))
-#define __rv_v_swap16(a) \
-  (__builtin_riscv_v64_pkbt16 ((a), (a)))
-#define __rv_v_smmul(a, b) \
-  (__builtin_riscv_v64_smmul ((a), (b)))
-#define __rv_v_smmul_u(a, b) \
-  (__builtin_riscv_v64_smmul_u ((a), (b)))
-#define __rv_v_kwmmul(a, b) \
-  (__builtin_riscv_v64_kwmmul ((a), (b)))
-#define __rv_v_kwmmul_u(a, b) \
-  (__builtin_riscv_v64_kwmmul_u ((a), (b)))
-#define __rv_v_kmmac(r, a, b) \
-  (__builtin_riscv_v64_kmmac ((r), (a), (b)))
-#define __rv_v_kmmac_u(r, a, b) \
-  (__builtin_riscv_v64_kmmac_u ((r), (a), (b)))
-#define __rv_v_kmmsb(r, a, b) \
-  (__builtin_riscv_v64_kmmsb ((r), (a), (b)))
-#define __rv_v_kmmsb_u(r, a, b) \
-  (__builtin_riscv_v64_kmmsb_u ((r), (a), (b)))
-#define __rv_v_uclip32(a, imm) \
-  (__builtin_riscv_v64_uclip32 ((a), (imm)))
-#define __rv_v_sclip32(a, imm) \
-  (__builtin_riscv_v64_sclip32 ((a), (imm)))
-#define __rv_v_pbsad(a, b) \
-  (__builtin_riscv_v64_pbsad ((a), (b)))
-#define __rv_v_pbsada(acc, a, b) \
-  (__builtin_riscv_v64_pbsada ((acc), (a), (b)))
-#define __rv_add32(a, b) \
-  (__builtin_riscv_add32 ((a), (b)))
-#define __rv_radd32(a, b) \
-  (__builtin_riscv_radd32 ((a), (b)))
-#define __rv_uradd32(a, b) \
-  (__builtin_riscv_uradd32 ((a), (b)))
-#define __rv_kadd32(a, b) \
-  (__builtin_riscv_kadd32 ((a), (b)))
-#define __rv_ukadd32(a, b) \
-  (__builtin_riscv_ukadd32 ((a), (b)))
-#define __rv_sub32(a, b) \
-  (__builtin_riscv_sub32 ((a), (b)))
-#define __rv_rsub32(a, b) \
-  (__builtin_riscv_rsub32 ((a), (b)))
-#define __rv_ursub32(a, b) \
-  (__builtin_riscv_ursub32 ((a), (b)))
-#define __rv_ksub32(a, b) \
-  (__builtin_riscv_ksub32 ((a), (b)))
-#define __rv_uksub32(a, b) \
-  (__builtin_riscv_uksub32 ((a), (b)))
-#define __rv_cras32(a, b) \
-  (__builtin_riscv_cras32 ((a), (b)))
-#define __rv_crsa32(a, b) \
-  (__builtin_riscv_crsa32 ((a), (b)))
-#define __rv_rcras32(a, b) \
-  (__builtin_riscv_rcras32 ((a), (b)))
-#define __rv_rcrsa32(a, b) \
-  (__builtin_riscv_rcrsa32 ((a), (b)))
-#define __rv_urcras32(a, b) \
-  (__builtin_riscv_urcras32 ((a), (b)))
-#define __rv_urcrsa32(a, b) \
-  (__builtin_riscv_urcrsa32 ((a), (b)))
-#define __rv_kcras32(a, b) \
-  (__builtin_riscv_kcras32 ((a), (b)))
-#define __rv_kcrsa32(a, b) \
-  (__builtin_riscv_kcrsa32 ((a), (b)))
-#define __rv_ukcras32(a, b) \
-  (__builtin_riscv_ukcras32 ((a), (b)))
-#define __rv_ukcrsa32(a, b) \
-  (__builtin_riscv_ukcrsa32 ((a), (b)))
-#define __rv_stas32(a, b) \
-  (__builtin_riscv_stas32 ((a), (b)))
-#define __rv_stsa32(a, b) \
-  (__builtin_riscv_stsa32 ((a), (b)))
-#define __rv_rstas32(a, b) \
-  (__builtin_riscv_rstas32 ((a), (b)))
-#define __rv_rstsa32(a, b) \
-  (__builtin_riscv_rstsa32 ((a), (b)))
-#define __rv_urstas32(a, b) \
-  (__builtin_riscv_urstas32 ((a), (b)))
-#define __rv_urstsa32(a, b) \
-  (__builtin_riscv_urstsa32 ((a), (b)))
-#define __rv_kstas32(a, b) \
-  (__builtin_riscv_kstas32 ((a), (b)))
-#define __rv_kstsa32(a, b) \
-  (__builtin_riscv_kstsa32 ((a), (b)))
-#define __rv_ukstas32(a, b) \
-  (__builtin_riscv_ukstas32 ((a), (b)))
-#define __rv_ukstsa32(a, b) \
-  (__builtin_riscv_ukstsa32 ((a), (b)))
-#define __rv_sra32(a, b) \
-  (__builtin_riscv_sra32 ((a), (b)))
-#define __rv_sra32_u(a, b) \
-  (__builtin_riscv_sra32_u ((a), (b)))
-#define __rv_srl32(a, b) \
-  (__builtin_riscv_srl32 ((a), (b)))
-#define __rv_srl32_u(a, b) \
-  (__builtin_riscv_srl32_u ((a), (b)))
-#define __rv_sll32(a, b) \
-  (__builtin_riscv_sll32 ((a), (b)))
-#define __rv_ksll32(a, b) \
-  (__builtin_riscv_ksll32 ((a), (b)))
-#define __rv_kslra32(a, b) \
-  (__builtin_riscv_kslra32 ((a), (b)))
-#define __rv_kslra32_u(a, b) \
-  (__builtin_riscv_kslra32_u ((a), (b)))
-#define __rv_smin32(a, b) \
-  (__builtin_riscv_smin32 ((a), (b)))
-#define __rv_umin32(a, b) \
-  (__builtin_riscv_umin32 ((a), (b)))
-#define __rv_smax32(a, b) \
-  (__builtin_riscv_smax32 ((a), (b)))
-#define __rv_umax32(a, b) \
-  (__builtin_riscv_umax32 ((a), (b)))
-#define __rv_kabs32(a) \
-  (__builtin_riscv_kabs32 ((a)))
-#define __rv_khmbb16(a, b) \
-  (__builtin_riscv_khmbb16 ((a), (b)))
-#define __rv_khmbt16(a, b) \
-  (__builtin_riscv_khmbt16 ((a), (b)))
-#define __rv_khmtt16(a, b) \
-  (__builtin_riscv_khmtt16 ((a), (b)))
-#define __rv_kdmbb16(a, b) \
-  (__builtin_riscv_kdmbb16 ((a), (b)))
-#define __rv_kdmbt16(a, b) \
-  (__builtin_riscv_kdmbt16 ((a), (b)))
-#define __rv_kdmtt16(a, b) \
-  (__builtin_riscv_kdmtt16 ((a), (b)))
-#define __rv_smbb32(a, b) \
-  (__builtin_riscv_smbb32 ((a), (b)))
-#define __rv_smbt32(a, b) \
-  (__builtin_riscv_smbt32 ((a), (b)))
-#define __rv_smtt32(a, b) \
-  (__builtin_riscv_smtt32 ((a), (b)))
-#define __rv_kmabb32(r, a, b) \
-  (__builtin_riscv_kmabb32 ((r), (a), (b)))
-#define __rv_kmabt32(r, a, b) \
-  (__builtin_riscv_kmabt32 ((r), (a), (b)))
-#define __rv_kmatt32(r, a, b) \
-  (__builtin_riscv_kmatt32 ((r), (a), (b)))
-#define __rv_kmda32(a, b) \
-  (__builtin_riscv_kmda32 ((a), (b)))
-#define __rv_kmxda32(a, b) \
-  (__builtin_riscv_kmxda32 ((a), (b)))
-#define __rv_kmada32(r, a, b) \
-  (__builtin_riscv_kmada32 ((r), (a), (b)))
-#define __rv_kmaxda32(r, a, b) \
-  (__builtin_riscv_kmaxda32 ((r), (a), (b)))
-#define __rv_kmads32(r, a, b) \
-  (__builtin_riscv_kmads32 ((r), (a), (b)))
-#define __rv_kmadrs32(r, a, b) \
-  (__builtin_riscv_kmadrs32 ((r), (a), (b)))
-#define __rv_kmaxds32(r, a, b) \
-  (__builtin_riscv_kmaxds32 ((r), (a), (b)))
-#define __rv_kmsda32(r, a, b) \
-  (__builtin_riscv_kmsda32 ((r), (a), (b)))
-#define __rv_kmsxda32(r, a, b) \
-  (__builtin_riscv_kmsxda32 ((r), (a), (b)))
-#define __rv_smds32(a, b) \
-  (__builtin_riscv_smds32 ((a), (b)))
-#define __rv_smdrs32(a, b) \
-  (__builtin_riscv_smdrs32 ((a), (b)))
-#define __rv_smxds32(a, b) \
-  (__builtin_riscv_smxds32 ((a), (b)))
-#define __rv_kdmabb16(r, a, b) \
-  (__builtin_riscv_kdmabb16 ((r), (a), (b)))
-#define __rv_kdmabt16(r, a, b) \
-  (__builtin_riscv_kdmabt16 ((r), (a), (b)))
-#define __rv_kdmatt16(r, a, b) \
-  (__builtin_riscv_kdmatt16 ((r), (a), (b)))
-#define __rv_pkbb32(a, b) \
-  (__builtin_riscv_pkbb32 ((a), (b)))
-#define __rv_pkbt32(a, b) \
-  (__builtin_riscv_pkbt32 ((a), (b)))
-#define __rv_pktb32(a, b) \
-  (__builtin_riscv_pktb32 ((a), (b)))
-#define __rv_pktt32(a, b) \
-  (__builtin_riscv_pktt32 ((a), (b)))
-#define __rv_v_uadd32(a, b) \
-  (__builtin_riscv_v64_uadd32 ((a), (b)))
-#define __rv_v_sadd32(a, b) \
-  (__builtin_riscv_v64_sadd32 ((a), (b)))
-#define __rv_v_radd32(a, b) \
-  (__builtin_riscv_v64_radd32 ((a), (b)))
-#define __rv_v_uradd32(a, b) \
-  (__builtin_riscv_v64_uradd32 ((a), (b)))
-#define __rv_v_kadd32(a, b) \
-  (__builtin_riscv_v64_kadd32 ((a), (b)))
-#define __rv_v_ukadd32(a, b) \
-  (__builtin_riscv_v64_ukadd32 ((a), (b)))
-#define __rv_v_usub32(a, b) \
-  (__builtin_riscv_v64_usub32 ((a), (b)))
-#define __rv_v_ssub32(a, b) \
-  (__builtin_riscv_v64_ssub32 ((a), (b)))
-#define __rv_v_rsub32(a, b) \
-  (__builtin_riscv_v64_rsub32 ((a), (b)))
-#define __rv_v_ursub32(a, b) \
-  (__builtin_riscv_v64_ursub32 ((a), (b)))
-#define __rv_v_ksub32(a, b) \
-  (__builtin_riscv_v64_ksub32 ((a), (b)))
-#define __rv_v_uksub32(a, b) \
-  (__builtin_riscv_v64_uksub32 ((a), (b)))
-#define __rv_v_ucras32(a, b) \
-  (__builtin_riscv_v64_ucras32 ((a), (b)))
-#define __rv_v_scras32(a, b) \
-  (__builtin_riscv_v64_scras32 ((a), (b)))
-#define __rv_v_ucrsa32(a, b) \
-  (__builtin_riscv_v64_ucrsa32 ((a), (b)))
-#define __rv_v_scrsa32(a, b) \
-  (__builtin_riscv_v64_scrsa32 ((a), (b)))
-#define __rv_v_rcras32(a, b) \
-  (__builtin_riscv_v64_rcras32 ((a), (b)))
-#define __rv_v_rcrsa32(a, b) \
-  (__builtin_riscv_v64_rcrsa32 ((a), (b)))
-#define __rv_v_urcras32(a, b) \
-  (__builtin_riscv_v64_urcras32 ((a), (b)))
-#define __rv_v_urcrsa32(a, b) \
-  (__builtin_riscv_v64_urcrsa32 ((a), (b)))
-#define __rv_v_kcras32(a, b) \
-  (__builtin_riscv_v64_kcras32 ((a), (b)))
-#define __rv_v_kcrsa32(a, b) \
-  (__builtin_riscv_v64_kcrsa32 ((a), (b)))
-#define __rv_v_ukcras32(a, b) \
-  (__builtin_riscv_v64_ukcras32 ((a), (b)))
-#define __rv_v_ukcrsa32(a, b) \
-  (__builtin_riscv_v64_ukcrsa32 ((a), (b)))
-#define __rv_v_ustas32(a, b) \
-  (__builtin_riscv_v64_ustas32 ((a), (b)))
-#define __rv_v_sstas32(a, b) \
-  (__builtin_riscv_v64_sstas32 ((a), (b)))
-#define __rv_v_ustsa32(a, b) \
-  (__builtin_riscv_v64_ustsa32 ((a), (b)))
-#define __rv_v_sstsa32(a, b) \
-  (__builtin_riscv_v64_sstsa32 ((a), (b)))
-#define __rv_v_rstas32(a, b) \
-  (__builtin_riscv_v64_rstas32 ((a), (b)))
-#define __rv_v_rstsa32(a, b) \
-  (__builtin_riscv_v64_rstsa32 ((a), (b)))
-#define __rv_v_urstas32(a, b) \
-  (__builtin_riscv_v64_urstas32 ((a), (b)))
-#define __rv_v_urstsa32(a, b) \
-  (__builtin_riscv_v64_urstsa32 ((a), (b)))
-#define __rv_v_kstas32(a, b) \
-  (__builtin_riscv_v64_kstas32 ((a), (b)))
-#define __rv_v_kstsa32(a, b) \
-  (__builtin_riscv_v64_kstsa32 ((a), (b)))
-#define __rv_v_ukstas32(a, b) \
-  (__builtin_riscv_v64_ukstas32 ((a), (b)))
-#define __rv_v_ukstsa32(a, b) \
-  (__builtin_riscv_v64_ukstsa32 ((a), (b)))
-#define __rv_v_sra32(a, b) \
-  (__builtin_riscv_v64_sra32 ((a), (b)))
-#define __rv_v_sra32_u(a, b) \
-  (__builtin_riscv_v64_sra32_u ((a), (b)))
-#define __rv_v_srl32(a, b) \
-  (__builtin_riscv_v64_srl32 ((a), (b)))
-#define __rv_v_srl32_u(a, b) \
-  (__builtin_riscv_v64_srl32_u ((a), (b)))
-#define __rv_v_sll32(a, b) \
-  (__builtin_riscv_v64_sll32 ((a), (b)))
-#define __rv_v_ksll32(a, b) \
-  (__builtin_riscv_v64_ksll32 ((a), (b)))
-#define __rv_v_kslra32(a, b) \
-  (__builtin_riscv_v64_kslra32 ((a), (b)))
-#define __rv_v_kslra32_u(a, b) \
-  (__builtin_riscv_v64_kslra32_u ((a), (b)))
-#define __rv_v_smin32(a, b) \
-  (__builtin_riscv_v64_smin32 ((a), (b)))
-#define __rv_v_umin32(a, b) \
-  (__builtin_riscv_v64_umin32 ((a), (b)))
-#define __rv_v_smax32(a, b) \
-  (__builtin_riscv_v64_smax32 ((a), (b)))
-#define __rv_v_umax32(a, b) \
-  (__builtin_riscv_v64_umax32 ((a), (b)))
-#define __rv_v_kabs32(a) \
-  (__builtin_riscv_v64_kabs32 ((a)))
-#define __rv_v_khmbb16(a, b) \
-  (__builtin_riscv_v64_khmbb16 ((a), (b)))
-#define __rv_v_khmbt16(a, b) \
-  (__builtin_riscv_v64_khmbt16 ((a), (b)))
-#define __rv_v_khmtt16(a, b) \
-  (__builtin_riscv_v64_khmtt16 ((a), (b)))
-#define __rv_v_kdmbb16(a, b) \
-  (__builtin_riscv_v64_kdmbb16 ((a), (b)))
-#define __rv_v_kdmbt16(a, b) \
-  (__builtin_riscv_v64_kdmbt16 ((a), (b)))
-#define __rv_v_kdmtt16(a, b) \
-  (__builtin_riscv_v64_kdmtt16 ((a), (b)))
-#define __rv_v_smbb32(a, b) \
-  (__builtin_riscv_v64_smbb32 ((a), (b)))
-#define __rv_v_smbt32(a, b) \
-  (__builtin_riscv_v64_smbt32 ((a), (b)))
-#define __rv_v_smtt32(a, b) \
-  (__builtin_riscv_v64_smtt32 ((a), (b)))
-#define __rv_v_kmabb32(r, a, b) \
-  (__builtin_riscv_v64_kmabb32 ((r), (a), (b)))
-#define __rv_v_kmabt32(r, a, b) \
-  (__builtin_riscv_v64_kmabt32 ((r), (a), (b)))
-#define __rv_v_kmatt32(r, a, b) \
-  (__builtin_riscv_v64_kmatt32 ((r), (a), (b)))
-#define __rv_v_kmda32(a, b) \
-  (__builtin_riscv_v64_kmda32 ((a), (b)))
-#define __rv_v_kmxda32(a, b) \
-  (__builtin_riscv_v64_kmxda32 ((a), (b)))
-#define __rv_v_kmada32(r, a, b) \
-  (__builtin_riscv_v64_kmada32 ((r), (a), (b)))
-#define __rv_v_kmaxda32(r, a, b) \
-  (__builtin_riscv_v64_kmaxda32 ((r), (a), (b)))
-#define __rv_v_kmads32(r, a, b) \
-  (__builtin_riscv_v64_kmads32 ((r), (a), (b)))
-#define __rv_v_kmadrs32(r, a, b) \
-  (__builtin_riscv_v64_kmadrs32 ((r), (a), (b)))
-#define __rv_v_kmaxds32(r, a, b) \
-  (__builtin_riscv_v64_kmaxds32 ((r), (a), (b)))
-#define __rv_v_kmsda32(r, a, b) \
-  (__builtin_riscv_v64_kmsda32 ((r), (a), (b)))
-#define __rv_v_kmsxda32(r, a, b) \
-  (__builtin_riscv_v64_kmsxda32 ((r), (a), (b)))
-#define __rv_v_smds32(a, b) \
-  (__builtin_riscv_v64_smds32 ((a), (b)))
-#define __rv_v_smdrs32(a, b) \
-  (__builtin_riscv_v64_smdrs32 ((a), (b)))
-#define __rv_v_smxds32(a, b) \
-  (__builtin_riscv_v64_smxds32 ((a), (b)))
-#define __rv_v_pkbb32(a, b) \
-  (__builtin_riscv_v64_pkbb32 ((a), (b)))
-#define __rv_v_pkbt32(a, b) \
-  (__builtin_riscv_v64_pkbt32 ((a), (b)))
-#define __rv_v_pktb32(a, b) \
-  (__builtin_riscv_v64_pktb32 ((a), (b)))
-#define __rv_v_pktt32(a, b) \
-  (__builtin_riscv_v64_pktt32 ((a), (b)))
-#define __rv_sraw_u(a, b) \
-  (__builtin_riscv_sraw_u ((a), (b)))
+typedef int32x2_t int32xN_t;
+typedef uint32x2_t uint32xN_t;
+typedef uint16x4_t uint16xN_t;
+typedef int16x4_t int16xN_t;
+typedef uint8x8_t uint8xN_t;
+typedef int8x8_t int8xN_t;
+#endif
+
+#define RVP_ARGUMENT_LIST(_0, _1, _2, _3, _4, _5, ...) _5
+#define RVP_N_ARG(...) RVP_ARGUMENT_LIST(_, ## __VA_ARGS__, 4, 3, 2, 1, 0)
+
+#define RVP_VAR0(...) 
+#define RVP_VAR1(type1) a
+#define RVP_VAR2(type1, type2) RVP_VAR1(type1), b
+#define RVP_VAR3(type1, type2, type3) RVP_VAR2(type1, type2), c
+#define RVP_VAR4(type1, type2, type3, type4) RVP_VAR3(type1, type2, type3), d
+
+#define RVP_ARG0(...) 
+#define RVP_ARG1(type1) type1 a
+#define RVP_ARG2(type1, type2) RVP_ARG1(type1), type2 b
+#define RVP_ARG3(type1, type2, type3) RVP_ARG2(type1, type2), type3 c
+#define RVP_ARG4(type1, type2, type3, type4) RVP_ARG3(type1, type2, type3), type4 d
+
+#define RVP_CONCAT_IMPL(x,y)  x ## y
+#define RVP_CONCAT(x, y) RVP_CONCAT_IMPL(x, y)
+#define RVP_EXPAND_ARGS(...) RVP_CONCAT(RVP_ARG, RVP_N_ARG(__VA_ARGS__)) (__VA_ARGS__)
+#define RVP_EXPAND_VARS(...) RVP_CONCAT(RVP_VAR, RVP_N_ARG(__VA_ARGS__)) (__VA_ARGS__)
+
+#if __riscv_xlen == 32
+#define RVP_VECTOR_BUILTIN_PREFIX __builtin_riscv_v_
+#else
+#define RVP_VECTOR_BUILTIN_PREFIX __builtin_riscv_v64_
+#endif
+
+#define CREATE_RVP_INTRINSIC(return_type, name, ...)\
+  DIRECT_CREATE_RVP_INTRINSIC (return_type, name, name, __rv_,\
+      __builtin_riscv_, RVP_EXPAND_ARGS, RVP_EXPAND_VARS, __VA_ARGS__)
+
+/* RVP_N_ARG() expands to 0 in c89 */
+#define CREATE_RVP_INTRINSIC_EMPTY_ARGS(return_type, name, ...)\
+  DIRECT_CREATE_RVP_INTRINSIC (return_type, name, name, __rv_, __builtin_riscv_, \
+      RVP_ARG0, RVP_VAR0, __VA_ARGS__)
+
+#define CREATE_RVP_INTRINSIC_VECTOR(return_type, name, ...)\
+  DIRECT_CREATE_RVP_INTRINSIC (return_type, name, name, __rv_v_, RVP_VECTOR_BUILTIN_PREFIX,\
+      RVP_EXPAND_ARGS, RVP_EXPAND_VARS, __VA_ARGS__)
+
+#define DIRECT_CREATE_RVP_INTRINSIC(return_type, name, internal_name, intrisic_prefix,\
+      builtin_prefix, arg_expand_macro, var_expand_macro, ...)\
+  __extension__ extern __inline __attribute__ ((__always_inline__, __gnu_inline__, __artificial__)) \
+  return_type RVP_CONCAT(intrisic_prefix, name(arg_expand_macro(__VA_ARGS__))) { \
+    return RVP_CONCAT(builtin_prefix, internal_name) (var_expand_macro(__VA_ARGS__)); \
+  }
+
+/* ZPN */
+CREATE_RVP_INTRINSIC (uixlen_t, add8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, add16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, ave, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, bitrev, uixlen_t, const uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, bpick, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC_EMPTY_ARGS (void, clrov)
+CREATE_RVP_INTRINSIC (uixlen_t, clrs8, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, clrs16, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, clrs32, ixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, clz8, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, clz16, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, clz32, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, cmpeq8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, cmpeq16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, cras16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, crsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, insb, uixlen_t, uixlen_t, const uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kabs8, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kabs16, uixlen_t)
+CREATE_RVP_INTRINSIC (int32_t, kabsw, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kadd8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kadd16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kaddh, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kcras16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kcrsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmbb, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmbt, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmtt, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmbb, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmbt, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmtt, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmabb, ixlen_t, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmabt, ixlen_t, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, kdmatt, ixlen_t, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, khm8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, khmx8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, khm16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, khmx16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmbb, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmbt, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmtt, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_khmbb, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_khmbt, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_khmtt, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmabb, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmabt, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmatt, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmada, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmaxda, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmads, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmadrs, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmaxds, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmda, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmxda, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmac, ixlen_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmac_u, ixlen_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawb, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawb_u, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawb2, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawb2_u, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawt, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawt_u, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawt2, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmawt2_u, ixlen_t, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmsb, ixlen_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmsb_u, ixlen_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmwb2, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmwb2_u, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmwt2, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmmwt2_u, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmsda, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmsxda, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int32_t, ksllw, int32_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksll8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksll16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra8_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra16_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kslraw, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kslraw_u, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kstas16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kstsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksub8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksub16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, ksubh, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, ksubw, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kwmmul, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kwmmul_u, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (int32_t, maddr32, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (int32_t, msubr32, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, maxw, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, minw, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pbsad, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pbsada, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pkbt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pkbb16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pktb16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pktt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, radd8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, radd16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, raddw, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rcras16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rcrsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC_EMPTY_ARGS (uixlen_t, rdov)
+CREATE_RVP_INTRINSIC (uixlen_t, rstas16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rstsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rsub8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rsub16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, rsubw, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, sclip8, ixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sclip16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, sclip32, ixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, scmple8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, scmple16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, scmplt8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, scmplt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sll8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sll16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smaqa, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smaqa_su, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smax8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smax16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smbb16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smbt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smtt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smds, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smdrs, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smxds, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smin8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smin16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmul, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmul_u, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmwb, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmwb_u, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmwt, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smmwt_u, ixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, sra_u, ixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra8_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra16_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl8_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl16_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, stas16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, stsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sub8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sub16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sunpkd810, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sunpkd820, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sunpkd830, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sunpkd831, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sunpkd832, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, swap8, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uclip8, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uclip16, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uclip32, ixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ucmplt8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ucmple8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ucmplt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ucmple16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukadd8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukadd16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukaddh, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukaddw, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (int32_t, kaddw, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukcras16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukcrsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukstas16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukstsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uksub8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uksub16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uksubh, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uksubw, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umaqa, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umax8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umax16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umin8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umin16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uradd8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uradd16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uraddw, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urcras16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urcrsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urstas16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urstsa16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ursub8, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ursub16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ursubw, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, zunpkd810, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, zunpkd820, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, zunpkd830, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, zunpkd831, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, zunpkd832, uixlen_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmabb, ixlen_t, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmabt, ixlen_t, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int32_t, v_kdmatt, ixlen_t, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, uadd8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, sadd8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, uadd16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sadd16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, clrs8, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, clrs16, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, clz8, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, clz16, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, scmpeq8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, ucmpeq8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, scmpeq16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ucmpeq16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ucras16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, scras16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ucrsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, scrsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, kabs8, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kabs16, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, kadd8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kadd16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kcras16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kcrsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, khm8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, khmx8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, khm16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, khmx16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmabb, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmabt, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmatt, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmada, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmaxda, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmads, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmadrs, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmaxds, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmda, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmxda, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawb, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawb_u, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawb2, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawb2_u, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawt, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawt_u, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawt2, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmawt2_u, int32xN_t, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmwb2, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmwb2_u, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmwt2, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmmwt2_u, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmsda, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, kmsxda, int32xN_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, ksll8, int8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, ksll16, int16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, kslra8, int8xN_t, uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, kslra8_u, int8xN_t, uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kslra16, int16xN_t, uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kslra16_u, int16xN_t, uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kstas16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, kstsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, ksub8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, ksub16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uixlen_t, pbsad, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uixlen_t, pbsada, uixlen_t, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, pkbt16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, pkbb16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, pktb16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, pktt16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, radd8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, radd16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, rcras16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, rcrsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, rstas16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, rstsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, rsub8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, rsub16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, sclip8, int8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sclip16, int16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, scmple8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, scmple16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, scmplt8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, scmplt16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, sll8, uint8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, sll16, uint16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smaqa, int32xN_t, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smaqa_su, int32xN_t, int8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, smax8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, smax16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smbb16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smbt16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smtt16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smds, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smdrs, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smxds, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, smin8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, smin16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smmwb, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smmwb_u, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smmwt, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32xN_t, smmwt_u, int32xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, sra8, int8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, sra8_u, int8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sra16, int16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sra16_u, int16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, srl8, uint8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, srl8_u, uint8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, srl16, uint16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, srl16_u, uint16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ustas16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sstas16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ustsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sstsa16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, usub8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int8xN_t, ssub8, int8xN_t, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, usub16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, ssub16, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sunpkd810, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sunpkd820, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sunpkd830, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sunpkd831, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, sunpkd832, int8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, swap8, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, uclip8, int8xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (int16xN_t, uclip16, int16xN_t, const uint32_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, ucmplt8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, ucmple8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ucmplt16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ucmple16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, ukadd8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ukadd16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ukcras16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ukcrsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ukstas16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ukstsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, uksub8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, uksub16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint32xN_t, umaqa, uint32xN_t, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, umax8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, umax16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, umin8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, umin16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, uradd8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, uradd16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, urcras16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, urcrsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, urstas16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, urstsa16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint8xN_t, ursub8, uint8xN_t, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, ursub16, uint16xN_t, uint16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, zunpkd810, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, zunpkd820, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, zunpkd830, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, zunpkd831, uint8xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (uint16xN_t, zunpkd832, uint8xN_t)
+/* alias */
+__extension__ extern __inline __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+uixlen_t __rv_swap16 (uixlen_t a) {
+  return __builtin_riscv_pkbt16 (a, a);
+}
+__extension__ extern __inline __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+uint16xN_t __rv_v_swap16 (uint16xN_t a) {
+  return RVP_CONCAT(RVP_VECTOR_BUILTIN_PREFIX, pkbt16) (a, a);
+}
+
+/* ZPN64 ONLY */
+#if __riscv_xlen == 64
+CREATE_RVP_INTRINSIC (int32_t, sraw_u, int32_t, const uint32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kabs32, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kadd32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kcras32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kcrsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmabb16, int32x2_t, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmabt16, int32x2_t, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmatt16, int32x2_t, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmbb16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmbt16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kdmtt16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_khmbb16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_khmbt16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_khmtt16, int16x4_t, int16x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kmmac, int32x2_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kmmac_u, int32x2_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kmmsb, int32x2_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kmmsb_u, int32x2_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_ksll32, int32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kslra32, int32x2_t, int32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kslra32_u, int32x2_t, int32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kstas32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kstsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_ksub32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kwmmul, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_kwmmul_u, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_radd32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_rcras32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_rcrsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_rstas32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_rstsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_rsub32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sadd32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sclip32, int32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_scras32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_scrsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_smax32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_smin32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_smmul, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_smmul_u, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sra32, int32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sra32_u, int32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sstas32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_sstsa32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_ssub32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmbb16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmbt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, khmtt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmabb32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmabt32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmada32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmadrs32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmads32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmatt32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmaxda32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmaxds32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmda32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmsda32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmsxda32, ixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, kmxda32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smbb32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smbt32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smdrs32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smds32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smtt32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, smxds32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmabb32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmabt32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmada32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmadrs32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmads32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmatt32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmaxda32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmaxds32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmda32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmsda32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmsxda32, ixlen_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_kmxda32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smbb32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smbt32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smdrs32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smds32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smtt32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (ixlen_t, v_smxds32, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_clrs32, int32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_clz32, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_pkbb32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_pkbt32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_pktb32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_pktt32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_sll32, uint32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_srl32, uint32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_srl32_u, uint32x2_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_uadd32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_uclip32, int32x2_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ucras32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ucrsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ukadd32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ukcras32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ukcrsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ukstas32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ukstsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_uksub32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_umax32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_umin32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_uradd32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_urcras32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_urcrsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_urstas32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_urstsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ursub32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ustas32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_ustsa32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_usub32, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uixlen_t, add32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, cras32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, crsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kabs32, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kadd32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kcras32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kcrsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmabb16, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmabt16, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmatt16, uixlen_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmbb16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmbt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kdmtt16, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksll32, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra32, uixlen_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kslra32_u, uixlen_t, int32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kstas32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, kstsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ksub32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pkbb32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pkbt32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pktb32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, pktt32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, radd32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rcras32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rcrsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rstas32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rstsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, rsub32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sll32, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smax32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, smin32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra32, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sra32_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl32, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, srl32_u, uixlen_t, const uint32_t)
+CREATE_RVP_INTRINSIC (uixlen_t, stas32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, stsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, sub32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukadd32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukcras32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukcrsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukstas32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ukstsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uksub32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umax32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, umin32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, uradd32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urcras32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urcrsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urstas32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, urstsa32, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uixlen_t, ursub32, uixlen_t, uixlen_t)
 #endif
 
 #if defined(__riscv_zpsf)
-#define __rv_smal(a, b) \
-  (__builtin_riscv_smal ((a), (b)))
-#define __rv_radd64(a, b) \
-  (__builtin_riscv_radd64 ((a), (b)))
-#define __rv_uradd64(a, b) \
-  (__builtin_riscv_uradd64 ((a), (b)))
-#define __rv_kadd64(a, b) \
-  (__builtin_riscv_kadd64 ((a), (b)))
-#define __rv_ukadd64(a, b) \
-  (__builtin_riscv_ukadd64 ((a), (b)))
-#define __rv_ssub64(a, b) \
-  (__builtin_riscv_ssub64 ((a), (b)))
-#define __rv_usub64(a, b) \
-  (__builtin_riscv_usub64 ((a), (b)))
-#define __rv_rsub64(a, b) \
-  (__builtin_riscv_rsub64 ((a), (b)))
-#define __rv_ursub64(a, b) \
-  (__builtin_riscv_ursub64 ((a), (b)))
-#define __rv_ksub64(a, b) \
-  (__builtin_riscv_ksub64 ((a), (b)))
-#define __rv_uksub64(a, b) \
-  (__builtin_riscv_uksub64 ((a), (b)))
-#define __rv_smul16(a, b) \
-  (__builtin_riscv_smul16 ((a), (b)))
-#define __rv_umul16(a, b) \
-  (__builtin_riscv_umul16 ((a), (b)))
-#define __rv_smul8(a, b) \
-  (__builtin_riscv_smul8 ((a), (b)))
-#define __rv_umul8(a, b) \
-  (__builtin_riscv_umul8 ((a), (b)))
-#define __rv_smulx16(a, b) \
-  (__builtin_riscv_smulx16 ((a), (b)))
-#define __rv_smulx8(a, b) \
-  (__builtin_riscv_smulx8 ((a), (b)))
-#define __rv_umulx16(a, b) \
-  (__builtin_riscv_umulx16 ((a), (b)))
-#define __rv_umulx8(a, b) \
-  (__builtin_riscv_umulx8 ((a), (b)))
-#define __rv_smar64(r, a, b) \
-  (__builtin_riscv_smar64 ((r), (a), (b)))
-#define __rv_smsr64(r, a, b) \
-  (__builtin_riscv_smsr64 ((r), (a), (b)))
-#define __rv_umar64(r, a, b) \
-  (__builtin_riscv_umar64 ((r), (a), (b)))
-#define __rv_umsr64(r, a, b) \
-  (__builtin_riscv_umsr64 ((r), (a), (b)))
-#define __rv_kmar64(r, a, b) \
-  (__builtin_riscv_kmar64 ((r), (a), (b)))
-#define __rv_kmsr64(r, a, b) \
-  (__builtin_riscv_kmsr64 ((r), (a), (b)))
-#define __rv_ukmar64(r, a, b) \
-  (__builtin_riscv_ukmar64 ((r), (a), (b)))
-#define __rv_ukmsr64(r, a, b) \
-  (__builtin_riscv_ukmsr64 ((r), (a), (b)))
-#define __rv_maddr32(t, a, b) \
-  (__builtin_riscv_maddr32 ((t), (a), (b)))
-#define __rv_msubr32(t, a, b) \
-  (__builtin_riscv_msubr32 ((t), (a), (b)))
-#define __rv_smalbb(r, a, b) \
-  (__builtin_riscv_smalbb ((r), (a), (b)))
-#define __rv_smalbt(r, a, b) \
-  (__builtin_riscv_smalbt ((r), (a), (b)))
-#define __rv_smaltt(r, a, b) \
-  (__builtin_riscv_smaltt ((r), (a), (b)))
-#define __rv_smalda(r, a, b) \
-  (__builtin_riscv_smalda ((r), (a), (b)))
-#define __rv_smalxda(r, a, b) \
-  (__builtin_riscv_smalxda ((r), (a), (b)))
-#define __rv_smalds(r, a, b) \
-  (__builtin_riscv_smalds ((r), (a), (b)))
-#define __rv_smaldrs(r, a, b) \
-  (__builtin_riscv_smaldrs ((r), (a), (b)))
-#define __rv_smalxds(r, a, b) \
-  (__builtin_riscv_smalxds ((r), (a), (b)))
-#define __rv_smslda(r, a, b) \
-  (__builtin_riscv_smslda ((r), (a), (b)))
-#define __rv_smslxda(r, a, b) \
-  (__builtin_riscv_smslxda ((r), (a), (b)))
-#define __rv_wext(a, b) \
-  (__builtin_riscv_wext ((a), (b)))
-#define __rv_v_smul16(a, b) \
-  (__builtin_riscv_v_smul16 ((a), (b)))
-#define __rv_v_smulx16(a, b) \
-  (__builtin_riscv_v_smulx16 ((a), (b)))
-#define __rv_v_umul16(a, b) \
-  (__builtin_riscv_v_umul16 ((a), (b)))
-#define __rv_v_smul8(a, b) \
-  (__builtin_riscv_v_smul8 ((a), (b)))
-#define __rv_v_umul8(a, b) \
-  (__builtin_riscv_v_umul8 ((a), (b)))
-#define __rv_v_smulx8(a, b) \
-  (__builtin_riscv_v_smulx8 ((a), (b)))
-#define __rv_v_umulx16(a, b) \
-  (__builtin_riscv_v_umulx16 ((a), (b)))
-#define __rv_v_umulx8(a, b) \
-  (__builtin_riscv_v_umulx8 ((a), (b)))
-#define __rv_sadd64(a, b) \
-  (__builtin_riscv_sadd64 ((a), (b)))
-#define __rv_uadd64(a, b) \
-  (__builtin_riscv_uadd64 ((a), (b)))
-#define __rv_mulr64(a, b) \
-  (__builtin_riscv_mulr64 ((a), (b)))
-#define __rv_mulsr64(a, b) \
-  (__builtin_riscv_mulsr64 ((a), (b)))
-#if __riscv_xlen == 32
-#define __rv_v_smal(a, b) \
-  (__builtin_riscv_v_smal ((a), (b)))
-#define __rv_v_smalbb(r, a, b) \
-  (__builtin_riscv_v_smalbb ((r), (a), (b)))
-#define __rv_v_smalbt(r, a, b) \
-  (__builtin_riscv_v_smalbt ((r), (a), (b)))
-#define __rv_v_smaltt(r, a, b) \
-  (__builtin_riscv_v_smaltt ((r), (a), (b)))
-#define __rv_v_smalda(r, a, b) \
-  (__builtin_riscv_v_smalda ((r), (a), (b)))
-#define __rv_v_smalxda(r, a, b) \
-  (__builtin_riscv_v_smalxda ((r), (a), (b)))
-#define __rv_v_smalds(r, a, b) \
-  (__builtin_riscv_v_smalds ((r), (a), (b)))
-#define __rv_v_smaldrs(r, a, b) \
-  (__builtin_riscv_v_smaldrs ((r), (a), (b)))
-#define __rv_v_smalxds(r, a, b) \
-  (__builtin_riscv_v_smalxds ((r), (a), (b)))
-#define __rv_v_smslda(r, a, b) \
-  (__builtin_riscv_v_smslda ((r), (a), (b)))
-#define __rv_v_smslxda(r, a, b) \
-  (__builtin_riscv_v_smslxda ((r), (a), (b)))
-#else
-#define __rv_v_smal(a, b) \
-  (__builtin_riscv_v64_smal ((a), (b)))
-#define __rv_v_smalbb(r, a, b) \
-  (__builtin_riscv_v64_smalbb ((r), (a), (b)))
-#define __rv_v_smalbt(r, a, b) \
-  (__builtin_riscv_v64_smalbt ((r), (a), (b)))
-#define __rv_v_smaltt(r, a, b) \
-  (__builtin_riscv_v64_smaltt ((r), (a), (b)))
-#define __rv_v_smalda(r, a, b) \
-  (__builtin_riscv_v64_smalda ((r), (a), (b)))
-#define __rv_v_smalxda(r, a, b) \
-  (__builtin_riscv_v64_smalxda ((r), (a), (b)))
-#define __rv_v_smalds(r, a, b) \
-  (__builtin_riscv_v64_smalds ((r), (a), (b)))
-#define __rv_v_smaldrs(r, a, b) \
-  (__builtin_riscv_v64_smaldrs ((r), (a), (b)))
-#define __rv_v_smalxds(r, a, b) \
-  (__builtin_riscv_v64_smalxds ((r), (a), (b)))
-#define __rv_v_smslda(r, a, b) \
-  (__builtin_riscv_v64_smslda ((r), (a), (b)))
-#define __rv_v_smslxda(r, a, b) \
-  (__builtin_riscv_v64_smslxda ((r), (a), (b)))
-#define __rv_v_smar64(r, a, b) \
-  (__builtin_riscv_v64_smar64 ((r), (a), (b)))
-#define __rv_v_smsr64(r, a, b) \
-  (__builtin_riscv_v64_smsr64 ((r), (a), (b)))
-#define __rv_v_umar64(r, a, b) \
-  (__builtin_riscv_v64_umar64 ((r), (a), (b)))
-#define __rv_v_umsr64(r, a, b) \
-  (__builtin_riscv_v64_umsr64 ((r), (a), (b)))
-#define __rv_v_kmar64(r, a, b) \
-  (__builtin_riscv_v64_kmar64 ((r), (a), (b)))
-#define __rv_v_kmsr64(r, a, b) \
-  (__builtin_riscv_v64_kmsr64 ((r), (a), (b)))
-#define __rv_v_ukmar64(r, a, b) \
-  (__builtin_riscv_v64_ukmar64 ((r), (a), (b)))
-#define __rv_v_ukmsr64(r, a, b) \
-  (__builtin_riscv_v64_ukmsr64 ((r), (a), (b)))
+CREATE_RVP_INTRINSIC (int16x4_t, v_smul8, int8x4_t, int8x4_t)
+CREATE_RVP_INTRINSIC (int16x4_t, v_smulx8, int8x4_t, int8x4_t)
+CREATE_RVP_INTRINSIC (int32x2_t, v_smulx16, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC (int64_t, kadd64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (int64_t, kmar64, int64_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, kmsr64, int64_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, ksub64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (int64_t, mulsr64, int32_t, int32_t)
+CREATE_RVP_INTRINSIC (int64_t, radd64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (int64_t, rsub64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (int64_t, sadd64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (int64_t, smal, int64_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalbb, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalbt, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalda, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smaldrs, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalds, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smaltt, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalxda, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smalxds, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smar64, int64_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smslda, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smslxda, int64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, smsr64, int64_t, ixlen_t, ixlen_t)
+CREATE_RVP_INTRINSIC (int64_t, ssub64, int64_t, int64_t)
+CREATE_RVP_INTRINSIC (ixlen_t, wext, uint64_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint16x4_t, v_umul8, uint8x4_t, uint8x4_t)
+CREATE_RVP_INTRINSIC (uint16x4_t, v_umulx8, uint8x4_t, uint8x4_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_umul16, uint16x2_t, uint16x2_t)
+CREATE_RVP_INTRINSIC (uint32x2_t, v_umulx16, uint16x2_t, uint16x2_t)
+CREATE_RVP_INTRINSIC (uint64_t, mulr64, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, smul16, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, smul8, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, smulx16, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, smulx8, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, uadd64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC (uint64_t, ukadd64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC (uint64_t, ukmar64, uint64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uint64_t, ukmsr64, uint64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uint64_t, uksub64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC (uint64_t, umar64, uint64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uint64_t, umsr64, uint64_t, uixlen_t, uixlen_t)
+CREATE_RVP_INTRINSIC (uint64_t, umul16, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, umul8, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, umulx16, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, umulx8, uint32_t, uint32_t)
+CREATE_RVP_INTRINSIC (uint64_t, uradd64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC (uint64_t, ursub64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC (uint64_t, usub64, uint64_t, uint64_t)
+CREATE_RVP_INTRINSIC_VECTOR (int32x2_t, smul16, int16x2_t, int16x2_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smal, ixlen_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalbb, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalbt, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalda, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smaldrs, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalds, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smaltt, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalxda, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smalxds, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smslda, int64_t, int16xN_t, int16xN_t)
+CREATE_RVP_INTRINSIC_VECTOR (int64_t, smslxda, int64_t, int16xN_t, int16xN_t)
+#if __riscv_xlen == 64
+CREATE_RVP_INTRINSIC (int64_t, v_kmar64, int64_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int64_t, v_kmsr64, int64_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int64_t, v_smar64, int64_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (int64_t, v_smsr64, int64_t, int32x2_t, int32x2_t)
+CREATE_RVP_INTRINSIC (uint64_t, v_ukmar64, uint64_t, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint64_t, v_ukmsr64, uint64_t, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint64_t, v_umar64, uint64_t, uint32x2_t, uint32x2_t)
+CREATE_RVP_INTRINSIC (uint64_t, v_umsr64, uint64_t, uint32x2_t, uint32x2_t)
 #endif
+#endif // END OF ZPSF
+
 #endif
 #endif // END OF _RISCV_RVP_INTRINSIC_H

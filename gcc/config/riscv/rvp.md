@@ -130,37 +130,19 @@
   [(set (match_operand:SI 0 "register_operand" "=r")
 	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
 		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_KADDW))]
-  "TARGET_ZPN && !TARGET_64BIT"
+  "TARGET_ZPN"
   "kaddw\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
-
-(define_insn "kaddw64"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				    (match_operand:SI 2 "register_operand" "r")] UNSPEC_KADDW)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "kaddw\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
 
 (define_insn "ksubw"
   [(set (match_operand:SI 0 "register_operand" "=r")
 	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
 		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_KSUBW))]
-  "TARGET_ZPN && !TARGET_64BIT"
+  "TARGET_ZPN"
   "ksubw\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
-
-(define_insn "ksubw64"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				(match_operand:SI 2 "register_operand" "r")] UNSPEC_KSUBW)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "ksubw\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
 
 (define_insn "kaddh"
   [(set (match_operand:SI 0 "register_operand" "=r")
@@ -184,37 +166,19 @@
   [(set (match_operand:SI 0 "register_operand"             "=r")
 	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
 		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKADDW))]
-  "TARGET_ZPN && !TARGET_64BIT"
+  "TARGET_ZPN"
   "ukaddw\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
-
-(define_insn "ukaddw64"
-  [(set (match_operand:DI 0 "register_operand"             "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKADDW)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "ukaddw\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
 
 (define_insn "uksubw"
   [(set (match_operand:SI 0 "register_operand"             "=r")
 	(unspec:SI [(match_operand:SI 1 "register_operand" "r")
 		    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKSUBW))]
-  "TARGET_ZPN && !TARGET_64BIT"
+  "TARGET_ZPN"
   "uksubw\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
-
-(define_insn "uksubw64"
-  [(set (match_operand:DI 0 "register_operand"             "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKSUBW)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "uksubw\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
 
 (define_insn "ukaddh"
   [(set (match_operand:SI 0 "register_operand"             "=r")
@@ -225,15 +189,6 @@
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
 
-(define_insn "ukaddh64"
-  [(set (match_operand:DI 0 "register_operand"             "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKADDH)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "ukaddh\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
-
 (define_insn "uksubh"
   [(set (match_operand:SI 0 "register_operand"             "=r")
 	(sign_extend:SI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
@@ -242,15 +197,6 @@
   "uksubh\t%0, %1, %2"
   [(set_attr "type" "dsp")
    (set_attr "mode" "SI")])
-
-(define_insn "uksubh64"
-  [(set (match_operand:DI 0 "register_operand"             "=r")
-	(sign_extend:DI (unspec:SI [(match_operand:SI 1 "register_operand" "r")
-				    (match_operand:SI 2 "register_operand" "r")] UNSPEC_UKSUBH)))]
-  "TARGET_ZPN && TARGET_64BIT"
-  "uksubh\t%0, %1, %2"
-  [(set_attr "type" "dsp")
-   (set_attr "mode" "DI")])
 
 ;; kabs
 (define_insn "kabsw"
@@ -2770,7 +2716,7 @@
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
 	  (lt:X
-	    (sign_extend:SI
+	    (sign_extend:X
 		  (truncate:<VECI_scalar>
 		    (match_operand:SI 2 "register_operand"              " r")))
 		(const_int 0))
@@ -2788,7 +2734,7 @@
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
 	  (lt:X
-	    (sign_extend:SI
+	    (sign_extend:X
 		  (truncate:<VECI_scalar>
 		    (match_operand:SI 2 "register_operand"                     " r")))
 		(const_int 0))
@@ -6931,16 +6877,16 @@
 (define_expand "movv2si"
   [(set (match_operand:V2SI 0 "")
 	(match_operand:V2SI 1 ""))]
-  "TARGET_64BIT && TARGET_ZPN "
+  "TARGET_ZPN "
 {
   if (riscv_legitimize_move (V2SImode, operands[0], operands[1]))
     DONE;
 })
 
-(define_insn "*movv2si_64bit"
+(define_insn "*movv2si_rvp"
   [(set (match_operand:V2SI 0 "nonimmediate_operand" "=r,r,r, m,  *f,*f,*r,*f,*m")
 	(match_operand:V2SI 1 "move_operand"         " r,T,m,rJ,*r*J,*m,*f,*f,*f"))]
-  "TARGET_64BIT && TARGET_ZPN
+  "TARGET_ZPN
    && (register_operand (operands[0], V2SImode)
        || reg_or_0_operand (operands[1], V2SImode))"
   { return riscv_output_move (operands[0], operands[1]); }

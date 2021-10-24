@@ -39,6 +39,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "function.h"
 #include "emit-rtl.h"
 #include "explow.h"
+#include "riscv-protos.h"
 
 /* Macros to create an enumeration identifier for a function prototype.  */
 #define RISCV_FTYPE_NAME0(A) RISCV_##A##_FTYPE
@@ -177,14 +178,6 @@ tree int_xlen_node;
 #define RISCV_ATYPE_SI intSI_type_node
 #define RISCV_ATYPE_DI intDI_type_node
 #define RISCV_ATYPE_UDI unsigned_intDI_type_node
-#define RISCV_ATYPE_ULONG long_unsigned_type_node
-#define RISCV_ATYPE_LONG long_integer_type_node
-#define RISCV_ATYPE_LLONG long_long_integer_type_node
-#define RISCV_ATYPE_ULLONG  long_long_unsigned_type_node
-#define RISCV_ATYPE_PSI build_pointer_type (integer_type_node)
-#define RISCV_ATYPE_PUSI build_pointer_type (unsigned_type_node)
-#define RISCV_ATYPE_PLLONG build_pointer_type (long_long_integer_type_node)
-#define RISCV_ATYPE_PULLONG build_pointer_type (long_long_unsigned_type_node)
 #define RISCV_ATYPE_TI intTI_type_node
 #define RISCV_ATYPE_UTI unsigned_intTI_type_node
 #define RISCV_ATYPE_V4QI build_vector_type (intQI_type_node, 4)
@@ -197,8 +190,6 @@ tree int_xlen_node;
 #define RISCV_ATYPE_UV4HI build_vector_type (unsigned_intHI_type_node, 4)
 #define RISCV_ATYPE_V2SI build_vector_type (intSI_type_node, 2)
 #define RISCV_ATYPE_UV2SI build_vector_type (unsigned_intSI_type_node, 2)
-#define RISCV_ATYPE_V4SI build_vector_type (intSI_type_node, 4)
-#define RISCV_ATYPE_UV4SI build_vector_type (unsigned_intSI_type_node, 4)
 #define RISCV_ATYPE_V8HI build_vector_type (intHI_type_node, 8)
 #define RISCV_ATYPE_UV8HI build_vector_type (unsigned_intHI_type_node, 8)
 
@@ -320,9 +311,8 @@ riscv_prepare_builtin_arg (struct expand_operand *op, tree exp, unsigned argno,
 {
   rtx arg_rtx = expand_normal (CALL_EXPR_ARG (exp, argno));
   enum machine_mode mode = insn_data[icode].operand[argno + has_target_p].mode;
-    
-  if (TARGET_ZPN &&
-      !(*insn_data[icode].operand[argno + has_target_p].predicate) (arg_rtx, mode))
+
+  if (!(*insn_data[icode].operand[argno + has_target_p].predicate) (arg_rtx, mode))
     {
       rtx tmp_rtx = gen_reg_rtx (mode);
       if (GET_MODE_SIZE (mode) < GET_MODE_SIZE (GET_MODE (arg_rtx)))
@@ -399,14 +389,13 @@ riscv_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
   if (has_target_p)
     {
       /* p extension vector and scalar mode convension */
-      if (TARGET_ZPN &&
-          (!target
+      if ((!target
           || GET_MODE (target) != insn_return_mode
           || ! (*insn_data[icode].operand[opno].predicate) (target, insn_return_mode)))
-  {
-    mode = insn_return_mode;
-    target = gen_reg_rtx (mode);
-  }
+      {
+        mode = insn_return_mode;
+        target = gen_reg_rtx (mode);
+      }
 
       create_output_operand (&ops[opno++], target, mode);
     }

@@ -4458,6 +4458,19 @@ riscv_secondary_memory_needed (machine_mode mode, reg_class_t class1,
 	  && (class1 == FP_REGS) != (class2 == FP_REGS));
 }
 
+bool
+riscv_rvp_support_vector_mode_p (machine_mode mode)
+{
+  /* a few instructions(e.g. kdmabb, smulx) in RV64P also support V2HI, V4QI */
+  if (mode == V2HImode || mode == V4QImode || mode == V2SImode)
+    return true;
+
+  if (TARGET_64BIT && (mode == V8QImode || mode == V4HImode))
+    return true;
+
+  return false;
+}
+
 /* Implement TARGET_REGISTER_MOVE_COST.  */
 
 static int
@@ -5264,16 +5277,7 @@ riscv_new_address_profitable_p (rtx memref, rtx_insn *insn, rtx new_addr)
 bool
 riscv_vector_mode_supported_p (enum machine_mode mode)
 {
-  /* a few instructions(e.g. kdmabb) in RV64P also supports V2HI */
-  if (mode == V2HImode || mode == V4QImode)
-    return TARGET_ZPN;
-
-  if (mode == V8QImode
-      || mode == V4HImode
-      || mode == V2SImode)
-    return TARGET_ZPN && TARGET_64BIT;
-
-  return false;
+  return TARGET_ZPN && riscv_rvp_support_vector_mode_p (mode);
 }
 
 /* Initialize the GCC target structure.  */
