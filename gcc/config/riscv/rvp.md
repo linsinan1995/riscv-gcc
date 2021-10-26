@@ -2712,37 +2712,79 @@
    (set_attr "mode"  "<MODE>, <MODE>")])
 
 ;; KSLRA 8|16|32
-(define_insn "kslra<VECI:mode><X:mode>"
+(define_expand "kslra<VECI:mode>"
+  [(match_operand:VECI 0 "register_operand" "")
+   (match_operand:VECI 1 "register_operand" "")
+   (match_operand:SI 2 "register_operand" "")]
+   "TARGET_ZPN"
+{
+  unsigned int extract_bits;
+  switch (<VECI:bits>)
+  {
+    case 8: extract_bits = 4; break;
+    case 16: extract_bits = 5; break;
+    case 32: extract_bits = 6; break;
+    default: gcc_unreachable();
+  }
+  emit_insn (gen_kslra<VECI:mode>_internal (operands[0],
+    operands[1], operands[2], GEN_INT (extract_bits)));
+  DONE;
+}
+[(set_attr "type" "simd")])
+
+(define_insn "kslra<VECI:mode>_internal"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
-	  (lt:X
-	    (sign_extend:X
-		  (truncate:<VECI_scalar>
-		    (match_operand:SI 2 "register_operand"              " r")))
+	  (lt:SI
+		(sign_extract:SI
+			(match_operand:SI 2 "register_operand" " r")
+			(match_operand:SI 3 "imm3u_operand"  " I")
+			(const_int 0))
 		(const_int 0))
 	  (ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
-			 (neg:X (match_dup 2)))
+			 (neg:SI (sign_extract:SI (match_dup 2) (match_dup 3) (const_int 0))))
 	  (ss_ashift:VECI (match_dup 1)
-			  (match_dup 2))))]
+			  (sign_extract:SI (match_dup 2) (match_dup 3) (const_int 0)))))]
   "TARGET_ZPN"
   "kslra<VECI:bits>\t%0, %1, %2"
   [(set_attr "type" "simd")
    (set_attr "mode" "<VECI:MODE>")])
 
 ;; kslra32.u kslrav2sidi_round
-(define_insn "kslra<VECI:mode><X:mode>_round"
+(define_expand "kslra<VECI:mode>_round"
+  [(match_operand:VECI 0 "register_operand" "")
+   (match_operand:VECI 1 "register_operand" "")
+   (match_operand:SI 2 "register_operand" "")]
+   "TARGET_ZPN"
+{
+  unsigned int extract_bits;
+  switch (<VECI:bits>)
+  {
+    case 8: extract_bits = 4; break;
+    case 16: extract_bits = 5; break;
+    case 32: extract_bits = 6; break;
+    default: gcc_unreachable();
+  }
+  emit_insn (gen_kslra<VECI:mode>_round_internal (operands[0],
+    operands[1], operands[2], GEN_INT (extract_bits)));
+  DONE;
+}
+[(set_attr "type" "simd")])
+
+(define_insn "kslra<VECI:mode>_round_internal"
   [(set (match_operand:VECI 0 "register_operand"                  "=r")
 	(if_then_else:VECI
-	  (lt:X
-	    (sign_extend:X
-		  (truncate:<VECI_scalar>
-		    (match_operand:SI 2 "register_operand"                     " r")))
+	  (lt:SI
+		(sign_extract:SI
+			(match_operand:SI 2 "register_operand" " r")
+			(match_operand:SI 3 "imm3u_operand"  " I")
+			(const_int 0))
 		(const_int 0))
 	  (unspec:VECI [(ashiftrt:VECI (match_operand:VECI 1 "register_operand" " r")
-				       (neg:X (match_dup 2)))]
+				       (neg:SI (sign_extract:SI (match_dup 2) (match_dup 3) (const_int 0))))]
 		        UNSPEC_ROUND)
 	  (ss_ashift:VECI (match_dup 1)
-			  (match_dup 2))))]
+			  (sign_extract:SI (match_dup 2) (match_dup 3) (const_int 0)))))]
   "TARGET_ZPN"
   "kslra<VECI:bits>.u\t%0, %1, %2"
   [(set_attr "type" "simd")
