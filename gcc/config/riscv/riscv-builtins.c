@@ -178,8 +178,6 @@ tree int_xlen_node;
 #define RISCV_ATYPE_SI intSI_type_node
 #define RISCV_ATYPE_DI intDI_type_node
 #define RISCV_ATYPE_UDI unsigned_intDI_type_node
-#define RISCV_ATYPE_TI intTI_type_node
-#define RISCV_ATYPE_UTI unsigned_intTI_type_node
 #define RISCV_ATYPE_V4QI build_vector_type (intQI_type_node, 4)
 #define RISCV_ATYPE_UV4QI build_vector_type (unsigned_intQI_type_node, 4)
 #define RISCV_ATYPE_V8QI build_vector_type (intQI_type_node, 8)

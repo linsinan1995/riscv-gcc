@@ -13,7 +13,7 @@ uint32_t uclip8 (uint32_t ra)
 }
 
 static __attribute__ ((noinline))
-uint8x4_t v_uclip8 (uint8x4_t ra)
+uint8x4_t v_uclip8 (int8x4_t ra)
 {
   return __rv_v_uclip8 (ra, 3);
 }
@@ -21,8 +21,8 @@ uint8x4_t v_uclip8 (uint8x4_t ra)
 int
 main ()
 {
-  int32_t a = uclip8 (0x10101010);
-  uint8x4_t v_sa = v_uclip8 ((uint8x4_t) {1, -20, 11, 3});
+  uint32_t a = uclip8 (0x10101010u);
+  uint8x4_t v_sa = v_uclip8 ((int8x4_t) {1, -20, 11, 3});
 
   if (a != 0x03030303)
     abort ();

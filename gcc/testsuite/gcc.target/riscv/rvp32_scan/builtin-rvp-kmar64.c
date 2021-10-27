@@ -1,7 +1,7 @@
 /* kmar64 also appears on filename, so scan-assembler-times plus 1 */
 /* This is a test program for kmar64 instruction.  */
 /* { dg-do compile { target riscv32*-*-* } } */
-/* { dg-options "-march=rv32gc_zpn_zpsf -mabi=lp32 -O0" } */
+/* { dg-options "-march=rv32gc_zpn_zpsf -mabi=ilp32d -O0" } */
 
 
 #include <rvp_intrinsic.h>

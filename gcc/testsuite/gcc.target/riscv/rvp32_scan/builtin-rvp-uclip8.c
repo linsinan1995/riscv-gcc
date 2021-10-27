@@ -14,7 +14,7 @@ uint32_t pilcu (uint32_t ra)
 }
 
 static __attribute__ ((noinline))
-uint8x4_t pilcu_v (uint8x4_t ra)
+uint8x4_t pilcu_v (int8x4_t ra)
 {
   return __rv_v_uclip8 (ra, 3);
 }
