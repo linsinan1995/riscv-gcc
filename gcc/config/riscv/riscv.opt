@@ -124,6 +124,33 @@ Target Bool Var(riscv_mrelax) Init(1)
 Take advantage of linker relaxations to reduce the number of instructions
 required to materialize symbol addresses.
 
+mzce-sext
+Target Bool Var(riscv_mzce_sext) Init(0)
+
+mzce-zext
+Target Bool Var(riscv_mzce_zext) Init(0)
+
+mzce-cmul
+Target Bool Var(riscv_mzce_cmul) Init(0)
+
+mzce-clbhu
+Target Bool Var(riscv_mzce_clbhu) Init(0)
+
+mzce-clbh
+Target Bool Var(riscv_mzce_clbh) Init(0)
+
+mzce-csbh
+Target Bool Var(riscv_mzce_csbh) Init(0)
+
+mzce-lsgp
+Target Bool Var(riscv_mzce_lsgp) Init(0)
+
+mzce-cdecbnez
+Target Bool Var(riscv_mzce_cdecbnez) Init(0)
+
+mzce-decbnez
+Target Bool Var(riscv_mzce_decbnez) Init(0)
+
 Mask(64BIT)
 
 Mask(MUL)

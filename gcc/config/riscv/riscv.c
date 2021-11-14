@@ -4592,6 +4592,33 @@ riscv_file_start (void)
   if (! riscv_mrelax)
     fprintf (asm_out_file, "\t.option norelax\n");
 
+  if (riscv_mzce_sext)
+    fprintf (asm_out_file, "\t.option zce-sext\n");
+
+  if (riscv_mzce_zext)
+    fprintf (asm_out_file, "\t.option zce-zext\n");
+
+  if (riscv_mzce_cmul)
+    fprintf (asm_out_file, "\t.option zce-cmul\n");
+
+  if (riscv_mzce_clbhu)
+    fprintf (asm_out_file, "\t.option zce-clbhu\n");
+
+  if (riscv_mzce_clbh)
+    fprintf (asm_out_file, "\t.option zce-clbh\n");
+
+  if (riscv_mzce_csbh)
+    fprintf (asm_out_file, "\t.option zce-csbh\n");
+
+  if (riscv_mzce_lsgp)
+    fprintf (asm_out_file, "\t.option zce-lsgp\n");
+
+  if (riscv_mzce_cdecbnez)
+    fprintf (asm_out_file, "\t.option zce-cdecbnez\n");
+
+  if (riscv_mzce_decbnez)
+    fprintf (asm_out_file, "\t.option zce-decbnez\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }
