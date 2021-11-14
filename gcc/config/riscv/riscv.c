@@ -4592,6 +4592,15 @@ riscv_file_start (void)
   if (! riscv_mrelax)
     fprintf (asm_out_file, "\t.option norelax\n");
 
+  if (riscv_mzce_sext)
+    fprintf (asm_out_file, "\t.option zce-sext\n");
+
+  if (riscv_mzce_zext)
+    fprintf (asm_out_file, "\t.option zce-zext\n");
+
+  if (riscv_mzce_cmul)
+    fprintf (asm_out_file, "\t.option zce-cmul\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }
