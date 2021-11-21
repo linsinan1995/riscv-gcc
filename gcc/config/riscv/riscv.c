@@ -103,6 +103,8 @@ struct GTY(())  riscv_frame_info {
 
   /* Bit X is set if the function saves or restores GPR X.  */
   unsigned int mask;
+  /* Number of called saved registers that need to be saved */
+  unsigned int num_x_saved;
 
   /* Likewise FPR X.  */
   unsigned int fmask;
@@ -3357,6 +3359,46 @@ riscv_memmodel_needs_release_fence (enum memmodel model)
     }
 }
 
+static void
+riscv_print_push_size (FILE *file, rtx op)
+{
+  rtx elt_plus = SET_SRC (XVECEXP (op, 0, 0));
+  fprintf (file, "%d", INTVAL (XEXP (elt_plus, 1)));
+}
+
+static void
+riscv_print_reglist (FILE *file, rtx op)
+{
+  bool use_comma = false;
+  int total_count = XVECLEN (op, 0) - 1;
+  /* we only deal with three formats:
+    push {ra}
+    push {ra, s0}
+    push {ra, s0-sN}
+    registers except ra has to be continuous s-register,
+    and it is supposed to be checked in
+    riscv_valid_stack_push_pop_p */
+
+  if (REGNO (SET_SRC (XVECEXP (op, 0, 1))) == RETURN_ADDR_REGNUM)
+    {
+      fputs("ra", file);
+      if (total_count == 1)
+        return;
+      use_comma = true;
+      total_count --;
+    }
+
+  if (use_comma)
+    fputs(",", file);
+  else
+    use_comma = true;
+
+  if (total_count > 1)
+    fprintf (file, "s0-s%u", total_count - 1);
+  else
+    fprintf (file, "s0");
+}
+
 /* Implement TARGET_PRINT_OPERAND.  The RISCV-specific operand codes are:
 
    'h'	Print the high-part relocation associated with OP, after stripping
@@ -3404,6 +3446,14 @@ riscv_print_operand (FILE *file, rtx op, int letter)
     case 'i':
       if (code != REG)
         fputs ("i", file);
+      break;
+
+    case 'L':
+      riscv_print_reglist (file, op);
+      break;
+
+    case 'S':
+      riscv_print_push_size (file, op);
       break;
 
     default:
@@ -3790,6 +3840,8 @@ riscv_compute_frame_info (void)
   /* Only use save/restore routines when the GPRs are atop the frame.  */
   if (frame->hard_frame_pointer_offset != frame->total_size)
     frame->save_libcall_adjustment = 0;
+
+  frame->num_x_saved = num_x_saved;
 }
 
 /* Make sure that we're not trying to eliminate to the wrong hard frame
@@ -4046,6 +4098,168 @@ riscv_emit_stack_tie (void)
     emit_insn (gen_stack_tiedi (stack_pointer_rtx, hard_frame_pointer_rtx));
 }
 
+/* Function to check whether the OP is a valid stack push/pop operation.
+   For a valid stack operation, it must satisfy following conditions:
+     1. Consecutive registers push/pop operations.
+     2. Valid $fp/$gp/$lp push/pop operations.
+     3. The last element must be stack adjustment rtx.
+   See the prologue/epilogue implementation for details.  */
+bool
+riscv_valid_stack_push_pop_p (rtx op, bool push_p)
+{
+  int index;
+  int total_count;
+  rtx elt;
+  rtx elt_reg;
+  rtx elt_plus;
+
+  if (!riscv_mzce_push)
+    return false;
+
+  /* Get the counts of elements in the parallel rtx.  */
+  total_count = XVECLEN (op, 0);
+
+  /* at least sp + one callee save register rtx */
+  if (total_count < 2)
+    return false;
+
+  /* Perform some quick check for that every element should be 'set'.  */
+  for (index = 0; index < total_count; index++)
+    {
+      elt = XVECEXP (op, 0, index);
+      if (GET_CODE (elt) != SET)
+	return false;
+    }
+
+  elt = XVECEXP (op, 0, 0);
+
+  /* Extract its destination and source rtx.  */
+  elt_reg  = SET_DEST (elt);
+  elt_plus = SET_SRC (elt);
+
+  /* Check this is (set (stack_reg) (plus stack_reg const)) pattern.  */
+  if (GET_CODE (elt_reg) != REG
+      || GET_CODE (elt_plus) != PLUS
+      || REGNO (elt_reg) != STACK_POINTER_REGNUM)
+    return false;
+
+  /* Pass all test, this is a valid rtx.  */
+  return true;
+}
+
+/* Expand the "prologue" pattern.  */
+
+void
+riscv_expand_prologue_push (void)
+{
+  struct riscv_frame_info *frame = &cfun->machine->frame;
+  HOST_WIDE_INT size = frame->total_size;
+  unsigned mask = frame->mask;
+  unsigned first, last;
+  int offset, par_index;
+  rtx insn, push_rtx, parallel_insn, adjust_sp_rtx;
+  rtx reg;
+  rtx mem;
+  /* -fstack-usage */
+  if (flag_stack_usage_info)
+    current_function_static_stack_size = size;
+
+  /* naked function does not require compiler to generate prologue and epilogue */
+  if (cfun->machine->naked_p)
+    return;
+
+  /* When optimizing for size, call a subroutine to save the registers.
+     gcc -msave-restore, use a function call from libcall to reduce prologue and epilogue */
+  if (riscv_use_save_libcall (frame))
+    {
+      rtx dwarf = NULL_RTX;
+      dwarf = riscv_adjust_libcall_cfi_prologue ();
+
+      size -= frame->save_libcall_adjustment;
+      insn = emit_insn (riscv_gen_gpr_save_insn (frame));
+      frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
+
+      RTX_FRAME_RELATED_P (insn) = 1;
+      REG_NOTES (insn) = dwarf;
+    }
+
+  /* Save the registers.  */
+  if ((frame->mask | frame->fmask) != 0)
+    {
+      HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
+      parallel_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+      /* Initialize offset and start to create push behavior.  */
+      offset = size - UNITS_PER_WORD;
+      par_index = 1;
+
+      for (int regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
+        {
+          if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
+            continue;
+          reg = gen_rtx_REG (Pmode, regno);
+          mem = gen_frame_mem (Pmode, plus_constant (Pmode,
+                  stack_pointer_rtx,
+                  offset));
+          push_rtx = gen_rtx_SET (mem, reg);
+          XVECEXP (parallel_insn, 0, par_index) = push_rtx;
+          RTX_FRAME_RELATED_P (push_rtx) = 1;
+          offset -= UNITS_PER_WORD;
+          par_index++;
+        }
+
+      adjust_sp_rtx
+          = gen_rtx_SET (stack_pointer_rtx,
+            plus_constant (Pmode,
+                stack_pointer_rtx,
+                -step1));
+      XVECEXP (parallel_insn, 0, 0) = adjust_sp_rtx;
+      RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
+
+      parallel_insn = emit_insn (parallel_insn);
+
+        /* The insn rtx 'parallel_insn' will change frame layout.
+          We need to use RTX_FRAME_RELATED_P so that GCC is able to
+          generate CFI (Call Frame Information) stuff.  */
+      RTX_FRAME_RELATED_P (parallel_insn) = 1;
+      size -= step1;
+    }
+  /* useful when you use -msave-restore */
+  frame->mask = mask; /* Undo the above fib.  */
+
+  /* Set up the frame pointer, if we're using one.  */
+  if (frame_pointer_needed)
+    {
+      insn = gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
+			    GEN_INT (frame->hard_frame_pointer_offset - size));
+      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+
+      riscv_emit_stack_tie ();
+    }
+
+  /* Allocate the rest of the frame.  */
+  if (size > 0)
+    {
+      if (SMALL_OPERAND (-size))
+	{
+	  insn = gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
+				GEN_INT (-size));
+	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+	}
+      else
+	{
+	  riscv_emit_move (RISCV_PROLOGUE_TEMP (Pmode), GEN_INT (-size));
+	  emit_insn (gen_add3_insn (stack_pointer_rtx,
+				    stack_pointer_rtx,
+				    RISCV_PROLOGUE_TEMP (Pmode)));
+
+	  /* Describe the effect of the previous instructions.  */
+	  insn = plus_constant (Pmode, stack_pointer_rtx, -size);
+	  insn = gen_rtx_SET (stack_pointer_rtx, insn);
+	  riscv_set_frame_expr (insn);
+	}
+    }
+}
+
 /* Expand the "prologue" pattern.  */
 
 void
@@ -4086,9 +4300,12 @@ riscv_expand_prologue (void)
 			    GEN_INT (-step1));
       RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
       size -= step1;
-      riscv_for_each_saved_reg (size, riscv_save_reg, false, false);
+
+      riscv_for_each_saved_reg (size, riscv_save_reg,
+          false /* bool epilogue */, false /* bool maybe_eh_return */);
     }
 
+  /* useful when you use -msave-restore */
   frame->mask = mask; /* Undo the above fib.  */
 
   /* Set up the frame pointer, if we're using one.  */

@@ -151,6 +151,9 @@ Target Bool Var(riscv_mzce_cdecbnez) Init(0)
 mzce-decbnez
 Target Bool Var(riscv_mzce_decbnez) Init(0)
 
+mzce-push
+Target Bool Var(riscv_mzce_push) Init(0)
+
 Mask(64BIT)
 
 Mask(MUL)

@@ -17,3 +17,9 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
+(define_insn "*stack_push<mode>"
+  [(match_parallel 0 "riscv_stack_push_operation"
+     [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
+			    (match_operand:X 1 "const_int_operand" "")))])]
+  ""
+  "c.push  {%L0}, {}, %S0")
