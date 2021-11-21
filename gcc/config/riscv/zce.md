@@ -38,3 +38,10 @@
   "muli\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "<MODE>")])
+
+(define_insn "*stack_push<mode>"
+  [(match_parallel 0 "riscv_stack_push_operation"
+     [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
+			    (match_operand:X 1 "const_int_operand" "")))])]
+  "TARGET_ZCEA"
+  "c.push\t{%L0}, {}, %S0")

@@ -66,6 +66,7 @@ extern bool riscv_expand_block_move (rtx, rtx, rtx);
 extern rtx riscv_return_addr (int, rtx);
 extern HOST_WIDE_INT riscv_initial_elimination_offset (int, int);
 extern void riscv_expand_prologue (void);
+extern void riscv_expand_prologue_push (void);
 extern void riscv_expand_epilogue (int);
 extern bool riscv_epilogue_uses (unsigned int);
 extern bool riscv_can_use_return_insn (void);
@@ -74,6 +75,7 @@ extern bool riscv_expand_block_move (rtx, rtx, rtx);
 extern bool riscv_store_data_bypass_p (rtx_insn *, rtx_insn *);
 extern rtx riscv_gen_gpr_save_insn (struct riscv_frame_info *);
 extern bool riscv_gpr_save_operation_p (rtx);
+extern bool riscv_valid_stack_push_pop_p (rtx, bool);
 
 /* Routines implemented in riscv-c.c.  */
 void riscv_cpu_cpp_builtins (cpp_reader *);

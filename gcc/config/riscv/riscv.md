@@ -69,6 +69,7 @@
 
 (define_constants
   [(RETURN_ADDR_REGNUM		1)
+   (SP_REGNUM 			2)
    (GP_REGNUM 			3)
    (T0_REGNUM			5)
    (T1_REGNUM			6)
@@ -2200,7 +2201,10 @@
   [(const_int 1)]
   ""
 {
-  riscv_expand_prologue ();
+  if (riscv_mzce_push_pop)
+    riscv_expand_prologue_push ();
+  else
+    riscv_expand_prologue ();
   DONE;
 })
 
