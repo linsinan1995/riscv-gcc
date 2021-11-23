@@ -5126,7 +5126,6 @@ expand_function_start (tree subr)
      In some cases this requires emitting insns.  */
   assign_parms (subr);
 
-  printf("cfun->static_chain_decl=%u\n", cfun->static_chain_decl);
   /* If function gets a static chain arg, store it.  */
   if (cfun->static_chain_decl)
     {
