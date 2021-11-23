@@ -4651,6 +4651,12 @@ riscv_file_start (void)
   if (riscv_mzce_muli)
     fprintf (asm_out_file, "\t.option zce-muli\n");
 
+  if (riscv_mzce_cnot)
+    fprintf (asm_out_file, "\t.option zce-cnot\n");
+
+  if (riscv_mzce_cneg)
+    fprintf (asm_out_file, "\t.option zce-cneg\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }
