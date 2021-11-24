@@ -4657,6 +4657,9 @@ riscv_file_start (void)
   if (riscv_mzce_cneg)
     fprintf (asm_out_file, "\t.option zce-cneg\n");
 
+  if (riscv_mzce_cmva01s07)
+    fprintf (asm_out_file, "\t.option zce-cmva01s07\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }

@@ -166,6 +166,9 @@ Target Bool Var(riscv_mzce_cnot) Init(0)
 mzce-cneg
 Target Bool Var(riscv_mzce_cneg) Init(0)
 
+mzce-cmva01s07
+Target Bool Var(riscv_mzce_cmva01s07) Init(0)
+
 Mask(64BIT)
 
 Mask(MUL)
