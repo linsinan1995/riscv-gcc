@@ -18,12 +18,6 @@
 namespace {
 
 
-/* Function to check whether the OP is a valid stack push/pop operation.
-   For a valid stack operation, it must satisfy following conditions:
-     1. Consecutive registers push/pop operations.
-     2. Valid $fp/$gp/$lp push/pop operations.
-     3. The last element must be stack adjustment rtx.
-   See the prologue/epilogue implementation for details.  */
 bool
 riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 {
@@ -33,13 +27,10 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   rtx elt_reg;
   rtx elt_plus;
 
-  if (!riscv_mzce_push_pop)
-    return false;
-
   /* Get the counts of elements in the parallel rtx.  */
   total_count = XVECLEN (op, 0);
 
-  /* at least sp + one callee save register rtx */
+  /* At least sp + one callee save register rtx */
   if (total_count < 2)
     return false;
 
@@ -90,11 +81,11 @@ static unsigned int
 zce_push_argument_list (void)
 {
   basic_block bb;
-  bool find_push_rtx = false;
+  rtx set_src, set_dst;
   int total_count;
-  rtx elt_plus;
-//   printf ("func %s\n", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
-
+  int n_sreg = 0;
+  // printf ("func %s\n", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
+  /* we only check first basic block */
   FOR_EACH_BB_FN (bb, cfun)
     {
       if (dump_file)
@@ -105,42 +96,64 @@ zce_push_argument_list (void)
 
       FOR_BB_INSNS (bb, insn)
 	{
-	  pat = PATTERN (insn);
-
-	  if (NOTE_P (insn) && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END)
+	  /* if push rtx is not in prologue phase or the number of
+	     saved s register is 0.  */
+	  if (NOTE_P (insn)
+	      && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END
+	      && n_sreg == 0)
 	    {
 	      if (dump_file)
-		fprintf (dump_file, "-------- push rtx not found --------\n");
+		fprintf (dump_file, "-------- no argument list --------\n");
 	      return 0;
 	    }
 
+	  if (!INSN_P (insn))
+	    continue;
+
+	  pat = PATTERN (insn);
+	  /* looking for mv s*,a* pattern */
+	  if (n_sreg > 0
+	      && GET_CODE (pat) == SET)
+	    {
+		set_src = SET_SRC (pat);
+		set_dst = SET_DEST (pat);
+		if (GET_CODE (set_src) == REG
+		    && GET_CODE (set_dst) == REG)
+		  {
+		    if (dump_file)
+		      fprintf (dump_file, "REGNO (set_src)=%s, REGNO (set_dst)=%s\n",
+		          reg_names [REGNO (set_src)], reg_names [REGNO (set_dst)]);
+		  }
+	    }
+
+	  /* push rtx */
 	  if (GET_CODE (pat) == PARALLEL
 	      && riscv_valid_stack_push_pop_p (pat, false))
 	    {
 	      total_count = XVECLEN (pat, 0);
 	      /* check first saved register is ra or not  */
-	      elt_plus = SET_SRC (XVECEXP (pat, 0, 1));
-	      if (REGNO (elt_plus) == RETURN_ADDR_REGNUM)
+	      set_src = SET_SRC (XVECEXP (pat, 0, 1));
+	      if (REGNO (set_src) == RETURN_ADDR_REGNUM)
 		total_count --;
 	      if (dump_file)
 		fprintf (dump_file, "-------- Saved s-register %d --------\n", total_count - 1);
-	      return 0;
+	      n_sreg = total_count - 1;
+	      if (n_sreg == 0)
+		return 0;
 	    }
 	}
+      return 0;
     }
-
-  if (dump_file)
-    fprintf (dump_file, "-------- Finish initializing --------\n");
   return 0;
 }
 
 const pass_data pass_data_zce_push =
 {
   RTL_PASS, /* type */
-  "zce_push", /* name */
+  "zce-push", /* name */
   OPTGROUP_NONE, /* optinfo_flags */
   TV_NONE, /* tv_id */
-  PROP_gimple_any, /* properties_required */
+  0, /* properties_required */
   0, /* properties_provided */
   0, /* properties_destroyed */
   0, /* todo_flags_start */
