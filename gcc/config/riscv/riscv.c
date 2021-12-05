@@ -4166,122 +4166,6 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   return true;
 }
 
-/* Expand the "prologue" pattern when zce-push-pop option
-   is enabled. This part is modified based on nds32 v3push */
-
-void
-riscv_expand_prologue_push (void)
-{
-  struct riscv_frame_info *frame = &cfun->machine->frame;
-  HOST_WIDE_INT size = frame->total_size;
-  unsigned mask = frame->mask;
-  unsigned first, last;
-  int offset, par_index;
-  rtx insn, push_rtx, parallel_insn, adjust_sp_rtx;
-  rtx reg;
-  rtx mem;
-  /* -fstack-usage */
-  if (flag_stack_usage_info)
-    current_function_static_stack_size = size;
-
-  /* naked function does not require compiler to generate prologue and epilogue */
-  if (cfun->machine->naked_p)
-    return;
-
-  /* When optimizing for size, call a subroutine to save the registers.
-     gcc -msave-restore, use a function call from libcall to reduce prologue and epilogue */
-  if (riscv_use_save_libcall (frame))
-    {
-      rtx dwarf = NULL_RTX;
-      dwarf = riscv_adjust_libcall_cfi_prologue ();
-
-      size -= frame->save_libcall_adjustment;
-      insn = emit_insn (riscv_gen_gpr_save_insn (frame));
-      frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
-
-      RTX_FRAME_RELATED_P (insn) = 1;
-      REG_NOTES (insn) = dwarf;
-    }
-
-  /* Save the registers.  */
-  if ((frame->mask | frame->fmask) != 0)
-    {
-      HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
-      parallel_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
-      /* Initialize offset and start to create push behavior.  */
-      offset = size - UNITS_PER_WORD;
-      par_index = 1;
-
-      for (int regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
-	{
-	  if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
-	    continue;
-	  reg = gen_rtx_REG (Pmode, regno);
-	  mem = gen_frame_mem (Pmode, plus_constant (Pmode,
-		  stack_pointer_rtx,
-		  offset));
-	  push_rtx = gen_rtx_SET (mem, reg);
-	  XVECEXP (parallel_insn, 0, par_index) = push_rtx;
-	  RTX_FRAME_RELATED_P (push_rtx) = 1;
-	  offset -= UNITS_PER_WORD;
-	  par_index++;
-	}
-
-      /* Add stack pointer adjustment rtx to the beginning of this
-      parallel rtx.  */
-      adjust_sp_rtx
-	  = gen_rtx_SET (stack_pointer_rtx,
-	    plus_constant (Pmode,
-		stack_pointer_rtx,
-		-step1));
-      XVECEXP (parallel_insn, 0, 0) = adjust_sp_rtx;
-      RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
-
-      parallel_insn = emit_insn (parallel_insn);
-
-      /* The insn rtx 'parallel_insn' will change frame layout.
-	We need to use RTX_FRAME_RELATED_P so that GCC is able to
-	generate CFI (Call Frame Information) stuff.  */
-      RTX_FRAME_RELATED_P (parallel_insn) = 1;
-      size -= step1;
-    }
-  /* useful when you use -msave-restore */
-  frame->mask = mask; /* Undo the above fib.  */
-
-  /* Set up the frame pointer, if we're using one.  */
-  if (frame_pointer_needed)
-    {
-      insn = gen_add3_insn (hard_frame_pointer_rtx, stack_pointer_rtx,
-			    GEN_INT (frame->hard_frame_pointer_offset - size));
-      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
-
-      riscv_emit_stack_tie ();
-    }
-
-  /* Allocate the rest of the frame.  */
-  if (size > 0)
-    {
-      if (SMALL_OPERAND (-size))
-	{
-	  insn = gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
-				GEN_INT (-size));
-	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
-	}
-      else
-	{
-	  riscv_emit_move (RISCV_PROLOGUE_TEMP (Pmode), GEN_INT (-size));
-	  emit_insn (gen_add3_insn (stack_pointer_rtx,
-				    stack_pointer_rtx,
-				    RISCV_PROLOGUE_TEMP (Pmode)));
-
-	  /* Describe the effect of the previous instructions.  */
-	  insn = plus_constant (Pmode, stack_pointer_rtx, -size);
-	  insn = gen_rtx_SET (stack_pointer_rtx, insn);
-	  riscv_set_frame_expr (insn);
-	}
-    }
-}
-
 /* Expand the "prologue" pattern.  */
 
 void
@@ -4291,6 +4175,7 @@ riscv_expand_prologue (void)
   HOST_WIDE_INT size = frame->total_size;
   unsigned mask = frame->mask;
   rtx insn;
+  unsigned ra_bit = 1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST);
 
   if (flag_stack_usage_info)
     current_function_static_stack_size = size;
@@ -4316,15 +4201,59 @@ riscv_expand_prologue (void)
   if ((frame->mask | frame->fmask) != 0)
     {
       HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
-
-      insn = gen_add3_insn (stack_pointer_rtx,
+      if (!riscv_mzce_push_pop
+          || (frame->mask & ra_bit) == 0)
+	{
+	  insn = gen_add3_insn (stack_pointer_rtx,
 			    stack_pointer_rtx,
 			    GEN_INT (-step1));
-      RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
-      size -= step1;
+	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+	  size -= step1;
 
-      riscv_for_each_saved_reg (size, riscv_save_reg,
-	  false /* bool epilogue */, false /* bool maybe_eh_return */);
+	  riscv_for_each_saved_reg (size, riscv_save_reg,
+	      false /* bool epilogue */, false /* bool maybe_eh_return */);
+	}
+      else
+	{
+	  /* Initialize offset and start to create push behavior.  */
+	  int offset = size - UNITS_PER_WORD;
+	  int par_index = 1;
+
+	  insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+
+	  for (int regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
+	    {
+	      if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
+		continue;
+	      rtx reg = gen_rtx_REG (Pmode, regno);
+	      rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
+		      stack_pointer_rtx,
+		      offset));
+	      rtx push_rtx = gen_rtx_SET (mem, reg);
+	      XVECEXP (insn, 0, par_index) = push_rtx;
+	      RTX_FRAME_RELATED_P (push_rtx) = 1;
+	      offset -= UNITS_PER_WORD;
+	      par_index++;
+	    }
+
+	  /* Add stack pointer adjustment rtx to the beginning of this
+	  parallel rtx.  */
+	  rtx adjust_sp_rtx
+	      = gen_rtx_SET (stack_pointer_rtx,
+		    plus_constant (Pmode,
+		    stack_pointer_rtx,
+		    -step1));
+	  XVECEXP (insn, 0, 0) = adjust_sp_rtx;
+	  RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
+
+	  insn = emit_insn (insn);
+
+	  /* The insn rtx 'insn' will change frame layout.
+	  We need to use RTX_FRAME_RELATED_P so that GCC is able to
+	  generate CFI (Call Frame Information) stuff.  */
+	  RTX_FRAME_RELATED_P (insn) = 1;
+	  size -= step1;
+	}
     }
 
   /* useful when you use -msave-restore */

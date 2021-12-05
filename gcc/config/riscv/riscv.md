@@ -2201,10 +2201,7 @@
   [(const_int 1)]
   ""
 {
-  if (riscv_mzce_push_pop)
-    riscv_expand_prologue_push ();
-  else
-    riscv_expand_prologue ();
+  riscv_expand_prologue ();
   DONE;
 })
 

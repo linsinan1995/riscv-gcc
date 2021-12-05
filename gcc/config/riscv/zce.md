@@ -44,4 +44,4 @@
      [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
 			    (match_operand:X 1 "const_int_operand" "")))])]
   "TARGET_ZCEA"
-  "c.push\t{%L0},{},%S0")
+  "push\t{%L0},{},%S0")
