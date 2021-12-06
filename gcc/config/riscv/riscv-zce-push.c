@@ -53,41 +53,43 @@ namespace {
 	mv	s1,a1
 	mv	s2,a2
 
-  4. if there is a valid argument list, then delete mv pattern and hack push rtx
-    if not, skip.
+  4. if there is a valid argument list, then replace the old
+    push parallel insn, and delete mv pattern.
+     if not, skip.
 */
 
-static rtx
-gen_zce_stack_insn (rtx_insn *push_rtx, rtx_insn *candidates[4], int n_args)
+void
+emit_zce_stack_insn (rtx_insn *push_rtx, rtx_insn *candidates[4], int n_args)
 {
   rtx push_pat = PATTERN (push_rtx);
   rtx new_push_insn;
   int n_old_rtx = XVECLEN (push_pat, 0);
   int n_rtx = n_old_rtx + n_args;
+  printf("n_old_rtx=%d\n", n_old_rtx);
+  printf("n_rtx=%d\n", n_rtx);
 
   new_push_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
   XVECEXP (new_push_insn, 0, n_rtx - 1) = XVECEXP (push_pat, 0, n_old_rtx - 1);
   for (int i = 0; i < n_old_rtx - 1; i ++)
     {
       XVECEXP (new_push_insn, 0, i) = XVECEXP (push_pat, 0, i);
+      printf("i=%d\n", i);
     }
 
   for (int i = 0; i < n_args; i ++)
     {
       rtx mv_pat = PATTERN (candidates[i]);
-      XVECEXP (new_push_insn, 0, n_old_rtx + i) = mv_pat;
+      XVECEXP (new_push_insn, 0, n_old_rtx - 1 + i) = mv_pat;
+      printf("i=%d, n_old_rtx + i = %d\n", i, n_old_rtx + i);
     }
+  printf("n_rtx - 1=%d, n_old_rtx - i = %d\n", n_rtx - 1, n_old_rtx - 1);
+  print_rtl (stderr, new_push_insn);
 
-  return new_push_insn;
-}
-
-static void
-replace_insns (rtx_insn *old_insn, rtx_insn *new_insns)
-{
-  if (new_insns)
-    emit_insn_before (new_insns, old_insn);
-
-  delete_insn (old_insn);
+  rtx_insn *before_push = PREV_INSN (push_rtx);
+  remove_insn (push_rtx);
+  rtx_insn *insn = emit_insn_after_setloc (new_push_insn, before_push,
+						INSN_LOCATION (push_rtx));
+  RTX_FRAME_RELATED_P (insn) = 1;
 }
 
 static int
@@ -264,11 +266,7 @@ zce_push_argument_list (void)
 	    }
 
 	  if (i > 0)
-	    {
-	      rtx new_push_insn = gen_zce_stack_insn (push_rtx, argument_list_candidates, i);
-	      emit_insn_before (new_push_insn, push_rtx);
-	      delete_insn (push_rtx);
-	    }
+	      emit_zce_stack_insn (push_rtx, argument_list_candidates, i);
 
 	  while (i--)
 	    delete_insn (argument_list_candidates[i]);
