@@ -58,40 +58,6 @@ namespace {
      if not, skip.
 */
 
-void
-emit_zce_stack_insn (rtx_insn *push_rtx, rtx_insn *candidates[4], int n_args)
-{
-  rtx push_pat = PATTERN (push_rtx);
-  rtx new_push_insn;
-  int n_old_rtx = XVECLEN (push_pat, 0);
-  int n_rtx = n_old_rtx + n_args;
-  printf("n_old_rtx=%d\n", n_old_rtx);
-  printf("n_rtx=%d\n", n_rtx);
-
-  new_push_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
-  XVECEXP (new_push_insn, 0, n_rtx - 1) = XVECEXP (push_pat, 0, n_old_rtx - 1);
-  for (int i = 0; i < n_old_rtx - 1; i ++)
-    {
-      XVECEXP (new_push_insn, 0, i) = XVECEXP (push_pat, 0, i);
-      printf("i=%d\n", i);
-    }
-
-  for (int i = 0; i < n_args; i ++)
-    {
-      rtx mv_pat = PATTERN (candidates[i]);
-      XVECEXP (new_push_insn, 0, n_old_rtx - 1 + i) = mv_pat;
-      printf("i=%d, n_old_rtx + i = %d\n", i, n_old_rtx + i);
-    }
-  printf("n_rtx - 1=%d, n_old_rtx - i = %d\n", n_rtx - 1, n_old_rtx - 1);
-  print_rtl (stderr, new_push_insn);
-
-  rtx_insn *before_push = PREV_INSN (push_rtx);
-  remove_insn (push_rtx);
-  rtx_insn *insn = emit_insn_after_setloc (new_push_insn, before_push,
-						INSN_LOCATION (push_rtx));
-  RTX_FRAME_RELATED_P (insn) = 1;
-}
-
 static int
 to_a_regno (int regno)
 {
@@ -104,10 +70,45 @@ to_s_regno (int regno)
   return CALLEE_SAVED_REG_NUMBER (regno);
 }
 
-/* Mark every instruction that defines a register value that INSN uses.  */
+void
+emit_zce_stack_insn (rtx_insn *push_rtx, rtx_insn *candidates[4], int n_args)
+{
+  rtx push_pat = PATTERN (push_rtx);
+  rtx new_push_insn;
+  int n_old_rtx = XVECLEN (push_pat, 0);
+  int n_rtx = n_old_rtx + n_args;
+
+  new_push_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
+
+  /* sw insns */
+  for (int i = 0; i < n_old_rtx - 1; i ++)
+    XVECEXP (new_push_insn, 0, i) = XVECEXP (push_pat, 0, i);
+
+  /* move insns */
+  for (int i = 0; i < n_args; i ++)
+    {
+      rtx mv_pat = PATTERN (candidates[i]);
+      XVECEXP (new_push_insn, 0, n_old_rtx - 1 + i) = mv_pat;
+      delete_insn (candidates[i]);
+    }
+
+  /* sp adjust insn */
+  XVECEXP (new_push_insn, 0, n_rtx - 1) = XVECEXP (push_pat, 0, n_old_rtx - 1);
+
+  if (dump_file)
+    {
+      fprintf(dump_file, "New push insn:\n");
+      print_rtl (dump_file, new_push_insn);
+    }
+
+  rtx_insn *insn = emit_insn_after (new_push_insn, push_rtx);
+  RTX_FRAME_RELATED_P (insn) = 1;
+  delete_insn (push_rtx);
+  df_insn_rescan_all ();
+}
 
 static void
-mark_reg_dependencies (rtx_insn *insn, sbitmap bm)
+mark_reg_dependencies (rtx_insn *insn, sbitmap bm, int *not_avail_mv_count)
 {
   df_ref use, def;
   int regno;
@@ -124,7 +125,11 @@ mark_reg_dependencies (rtx_insn *insn, sbitmap bm)
       if (regno >= regno_pushed)
 	continue;
 
-      bitmap_set_bit (bm, regno);
+      if (!bitmap_bit_p (bm, regno))
+	{
+	  bitmap_set_bit (bm, regno);
+	  *not_avail_mv_count ++;
+	}
 
       if (dump_file)
 	{
@@ -143,9 +148,13 @@ mark_reg_dependencies (rtx_insn *insn, sbitmap bm)
 	continue;
 
       if (regno >= regno_pushed)
-        continue;
+	continue;
 
-      bitmap_set_bit (bm, regno);
+      if (!bitmap_bit_p (bm, regno))
+	{
+	  bitmap_set_bit (bm, regno);
+	  *not_avail_mv_count ++;
+	}
 
       if (dump_file)
 	{
@@ -160,14 +169,12 @@ static unsigned int
 zce_push_argument_list (void)
 {
   basic_block bb;
-  int total_count;
+  int total_count = 0, not_avail_mv_count = 0;
   rtx set_src;
-  sbitmap arg_move;
   rtx_insn *push_rtx = NULL;
   rtx_insn *argument_list_candidates[4] = {NULL, };
   rtx_insn *insn;
 
-  // printf ("func %s\n", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
   auto_sbitmap args (4);
   bitmap_clear (args);
 
@@ -207,14 +214,11 @@ zce_push_argument_list (void)
 	      if (total_count <= 0)
 		{
 		  if (dump_file)
-		    fprintf (dump_file, "Saved 0 s-register, stop tracking move pattern.\n", total_count);
+		    fprintf (dump_file, "Saved 0 s-register, stop tracking move pattern.\n");
 		  return 0;
 		}
 
 	      total_count = total_count > 4 ? 4 : total_count;
-	      arg_move = sbitmap_alloc (total_count);
-	      bitmap_clear (arg_move);
-
 	      if (dump_file)
 		fprintf (dump_file, "-------- Saved s-register %d --------\n", total_count);
 	      continue;
@@ -228,8 +232,8 @@ zce_push_argument_list (void)
 	      && REG_P (SET_SRC (pat))
 	      && REG_P (SET_DEST (pat)))
 	    {
-	      unsigned src_regno = to_a_regno (REGNO (SET_SRC (pat)));
-	      unsigned dst_regno = to_s_regno (REGNO (SET_DEST (pat)));
+	      int src_regno = to_a_regno (REGNO (SET_SRC (pat)));
+	      int dst_regno = to_s_regno (REGNO (SET_DEST (pat)));
 
 	      if (src_regno != -1
 		  && dst_regno == src_regno
@@ -238,26 +242,31 @@ zce_push_argument_list (void)
 		{
 		  // valid
 		  bitmap_set_bit (args, src_regno);
+		  not_avail_mv_count++;
 		  argument_list_candidates[src_regno] = insn;
 		  if (dump_file)
 		    fprintf (dump_file, "find pattern mv s%d,a%d\n", dst_regno, dst_regno);
 		}
 	    }
 
-	  mark_reg_dependencies (insn, arg_move);
+	  if (not_avail_mv_count == total_count)
+	    break;
+	  mark_reg_dependencies (insn, args, &not_avail_mv_count);
 	}
 
       if (push_rtx)
 	{
 	  int i;
-	  for (i = 0; i < arg_move->n_bits; i ++)
+	  for (i = 0; i < total_count; i ++)
 	      if (!argument_list_candidates[i])
 		break;
 
 	  if (dump_file)
 	    {
 	      fprintf (dump_file, "-------- bitmap release --------\npossible list: ");
-	      if (i == 0)
+	      if (total_count != i)
+		fprintf (dump_file, "found mv pattern, but it is invalid for push. #mv = %d, #expected mv = %d\n", i, total_count);
+	      else if (i == 0)
 		fprintf (dump_file, "null\n");
 	      else if (i == 1)
 		fprintf (dump_file, "a0\n");
@@ -265,14 +274,8 @@ zce_push_argument_list (void)
 		fprintf (dump_file, "a0-a%d\n", i - 1);
 	    }
 
-	  if (i > 0)
-	      emit_zce_stack_insn (push_rtx, argument_list_candidates, i);
-
-	  while (i--)
-	    delete_insn (argument_list_candidates[i]);
-
-	  /* free bitmap */
-	  sbitmap_free (arg_move);
+	  if (i > 0 && total_count == i)
+	    emit_zce_stack_insn (push_rtx, argument_list_candidates, i);
 	  return 0;
 	}
     }

@@ -39,9 +39,10 @@
   [(set_attr "type" "imul")
    (set_attr "mode" "<MODE>")])
 
+;; TODO: use only one print operand function
 (define_insn "*stack_push<mode>"
   [(match_parallel 0 "riscv_stack_push_operation"
      [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
 			    (match_operand:X 1 "const_int_operand" "")))])]
   "TARGET_ZCEA"
-  "push\t{%L0},{},%S0")
+  "push\t{%L0},{%G0},%S0")

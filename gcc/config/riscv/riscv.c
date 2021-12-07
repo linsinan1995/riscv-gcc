@@ -3391,10 +3391,36 @@ riscv_print_push_size (FILE *file, rtx op)
 }
 
 static void
+riscv_print_arglist (FILE *file, rtx op)
+{
+  int total_count = 0;
+  int idx;
+  rtx ele;
+
+  /* ignore argument list. */
+  for (idx = XVECLEN (op, 0) - 2; idx >= 0; --idx)
+    {
+      ele = XVECEXP (op, 0, idx);
+      if (!(GET_CODE (ele) == SET
+	  && REG_P (SET_SRC (ele))
+	  && REG_P (SET_DEST (ele))))
+	break;
+      ++total_count;
+    }
+
+  if (total_count > 1)
+    fprintf (file, "a0-a%u", total_count - 1);
+  else if (total_count == 1)
+    fprintf (file, "a0");
+}
+
+static void
 riscv_print_reglist (FILE *file, rtx op)
 {
   bool use_comma = false;
   int total_count = XVECLEN (op, 0) - 1;
+  int idx;
+  rtx ele;
   /* we only deal with three formats:
     push {ra}
     push {ra, s0}
@@ -3416,6 +3442,17 @@ riscv_print_reglist (FILE *file, rtx op)
     fputs(",", file);
   else
     use_comma = true;
+
+  /* ignore argument list. */
+  for (idx = XVECLEN (op, 0) - 2; idx >= 0; --idx)
+    {
+      ele = XVECEXP (op, 0, idx);
+      if (!(GET_CODE (ele) == SET
+	  && REG_P (SET_SRC (ele))
+	  && REG_P (SET_DEST (ele))))
+	break;
+      --total_count;
+    }
 
   if (total_count > 1)
     fprintf (file, "s0-s%u", total_count - 1);
@@ -3474,6 +3511,10 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'L':
       riscv_print_reglist (file, op);
+      break;
+
+    case 'G':
+      riscv_print_arglist (file, op);
       break;
 
     case 'S':
@@ -4124,6 +4165,7 @@ riscv_emit_stack_tie (void)
 
 /* Function to check whether the OP is a valid stack push/pop operation.
    This part is borrowed from nds32 nds32_valid_stack_push_pop_p */
+// TODO: add check for ra
 bool
 riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 {
