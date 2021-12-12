@@ -42,7 +42,39 @@
 ;; TODO: use only one print operand function
 (define_insn "*stack_push<mode>"
   [(match_parallel 0 "riscv_stack_push_operation"
-     [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
-			    (match_operand:X 1 "const_int_operand" "")))])]
+    [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
+      (match_operand:X 1 "const_int_operand" "")))])]
   "TARGET_ZCEA"
-  "push\t{%L0},{%G0},%S0")
+  "push\t{%L0},{%G0},%1")
+
+(define_insn "*stack_pop<mode>"
+  [(match_parallel 0 "riscv_stack_pop_operation"
+    [(set (match_operand:X 1 "register_operand" "")
+      (mem:X (plus:X (reg:X SP_REGNUM)
+	(match_operand:X 2 "const_int_operand" ""))))])]
+  "TARGET_ZCEA"
+  {
+    unsigned n_rtx = XVECLEN (operands[0], 0);
+    rtx use = XVECEXP (operands[0], 0, n_rtx - 2);
+    rtx ret = XVECEXP (operands[0], 0, n_rtx - 1);
+    bool popret_p = GET_CODE (ret) == SIMPLE_RETURN
+	          &&  GET_CODE (use) == USE;
+
+    return popret_p ? "popret\t{%L0},%S0" : "pop\t{%L0},%S0";
+  })
+
+(define_insn "*stack_popret<mode>"
+  [(match_parallel 0 "riscv_stack_pop_operation"
+    [(set (match_operand:X 1 "register_operand" "")
+      (mem:X (plus:X (reg:X SP_REGNUM)
+	(match_operand:X 2 "const_int_operand" ""))))])]
+  "TARGET_ZCEA"
+  {
+    unsigned n_rtx = XVECLEN (operands[0], 0);
+    rtx use = XVECEXP (operands[0], 0, n_rtx - 2);
+    rtx ret = XVECEXP (operands[0], 0, n_rtx - 1);
+    bool popret_p = GET_CODE (ret) == SIMPLE_RETURN
+	          &&  GET_CODE (use) == USE;
+
+    return popret_p ? "popret\t{%L0},%S0" : "pop\t{%L0},%S0";
+  })

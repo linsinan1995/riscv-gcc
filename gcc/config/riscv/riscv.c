@@ -3384,10 +3384,39 @@ riscv_memmodel_needs_release_fence (enum memmodel model)
 }
 
 static void
+riscv_print_ret_val (FILE *file, rtx op)
+{
+  /*
+    (set (reg/i:DI 10 a0)
+      (const_int 0 [0]))
+    (use (reg/i:DI 10 a0))
+  */
+  unsigned n_rtx = XVECLEN (op, 0);
+  for (int idx = n_rtx - 1; idx >= 0; --idx)
+    {
+      rtx elt = XVECEXP (op, 0, idx - 1);
+      if (GET_CODE (elt) == SET
+          && CONST_INT_P (SET_SRC (elt))
+	  && REG_P (SET_DEST (elt)))
+	{
+	  fprintf (file, "%ld", INTVAL (SET_SRC (elt)));
+	  return;
+	}
+    }
+}
+
+static void
 riscv_print_push_size (FILE *file, rtx op)
 {
-  rtx elt_plus = SET_SRC (XVECEXP (op, 0, 0));
-  fprintf (file, "%d", INTVAL (XEXP (elt_plus, 1)));
+  unsigned sp_adjust_idx = XVECLEN (op, 0) - 1;
+  rtx sp_adjust_rtx = XVECEXP (op, 0, sp_adjust_idx);
+
+  /* Skip ret pattern.  */
+  while (GET_CODE (sp_adjust_rtx) != SET)
+    sp_adjust_rtx = XVECEXP (op, 0, --sp_adjust_idx);
+
+  rtx elt_plus = SET_SRC (sp_adjust_rtx);
+  fprintf (file, "%ld", INTVAL (XEXP (elt_plus, 1)));
 }
 
 static void
@@ -3417,47 +3446,53 @@ riscv_print_arglist (FILE *file, rtx op)
 static void
 riscv_print_reglist (FILE *file, rtx op)
 {
-  bool use_comma = false;
-  int total_count = XVECLEN (op, 0) - 1;
-  int idx;
-  rtx ele;
   /* we only deal with three formats:
-    push {ra}
-    push {ra, s0}
-    push {ra, s0-sN}
+      push {ra}
+      push {ra, s0}
+      push {ra, s0-sN}
+    or
+      pop {ra}
+      pop {ra, s0}
+      pop {ra, s0-sN}
     registers except ra has to be continuous s-register,
-    and it is supposed to be checked in
-    riscv_valid_stack_push_pop_p */
+    and it is supposed to be checked before.
 
-  if (REGNO (SET_SRC (XVECEXP (op, 0, 1))) == RETURN_ADDR_REGNUM)
+    register list patterns in push:
+    (set/f (mem/c:SI 
+      (plus:SI (reg/f:SI 2 sp)
+	(const_int 28 [0x1c])) [2  S4 A32])
+      (reg:SI 1 ra))
+
+    register list patterns in pop:
+    (set/f (reg:DI 1 ra)
+      (mem/c:DI (plus:DI (reg/f:DI 2 sp)
+	(const_int 8 [0x8])) [2  S8 A64]))
+
+  */
+  int total_count = XVECLEN (op, 0);
+  int n_regs = 0;
+  bool push_p = REG_P (SET_SRC (XVECEXP (op, 0, 0)));
+
+  for (int idx = 0; idx < total_count; ++idx)
     {
-      fputs("ra", file);
-      if (total_count == 1)
-	return;
-      use_comma = true;
-      total_count --;
+      rtx ele = XVECEXP (op, 0, idx);
+      if (GET_CODE (ele) != SET)
+        continue;
+
+      bool restore_save_p = push_p ?
+	  MEM_P (SET_DEST (ele)) :
+	  MEM_P (SET_SRC (ele));
+
+      if (restore_save_p)
+	n_regs ++;
     }
 
-  if (use_comma)
-    fputs(",", file);
+  if (n_regs > 2)
+    fprintf (file, "ra,s0-s%u", total_count - 1);
+  else if (n_regs > 1)
+    fprintf (file, "ra,s0");
   else
-    use_comma = true;
-
-  /* ignore argument list. */
-  for (idx = XVECLEN (op, 0) - 2; idx >= 0; --idx)
-    {
-      ele = XVECEXP (op, 0, idx);
-      if (!(GET_CODE (ele) == SET
-	  && REG_P (SET_SRC (ele))
-	  && REG_P (SET_DEST (ele))))
-	break;
-      --total_count;
-    }
-
-  if (total_count > 1)
-    fprintf (file, "s0-s%u", total_count - 1);
-  else
-    fprintf (file, "s0");
+    fputs("ra", file);
 }
 
 /* Implement TARGET_PRINT_OPERAND.  The RISCV-specific operand codes are:
@@ -3515,6 +3550,10 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'G':
       riscv_print_arglist (file, op);
+      break;
+
+    case 'H':
+      riscv_print_ret_val (file, op);
       break;
 
     case 'S':
@@ -4171,14 +4210,17 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 {
   int index;
   int total_count;
+  int sp_adjust_rtx_index;
   rtx elt;
   rtx elt_reg;
   rtx elt_plus;
+  enum rtx_code dest_code = push_p ? MEM : REG;
 
   if (!riscv_mzce_push_pop)
     return false;
 
   total_count = XVECLEN (op, 0);
+  sp_adjust_rtx_index = push_p ? 0 : total_count - 1;
 
   /* At least sp + one callee save register rtx */
   if (total_count < 2)
@@ -4188,13 +4230,21 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   for (index = 0; index < total_count; index++)
     {
       elt = XVECEXP (op, 0, index);
+      /* maybe popret pattern */
+      if (!push_p && GET_CODE (elt) == SIMPLE_RETURN
+	  && total_count >= 4
+	  && index + 1 < total_count
+	  && GET_CODE (XVECEXP (op, 0, index + 1)) == USE)
+	{
+	  sp_adjust_rtx_index -= 2;
+	  index += 2;
+	  continue;
+	}
       if (GET_CODE (elt) != SET)
 	return false;
     }
 
-  elt = XVECEXP (op, 0, 0);
-
-  /* Extract its destination and source rtx.  */
+  elt = XVECEXP (op, 0, sp_adjust_rtx_index);
   elt_reg  = SET_DEST (elt);
   elt_plus = SET_SRC (elt);
 
@@ -4206,6 +4256,52 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 
   /* Pass all test, this is a valid rtx.  */
   return true;
+}
+
+/* Generate push/pop rtx */
+rtx
+riscv_gen_pushpop (struct riscv_frame_info *frame,
+    HOST_WIDE_INT offset, HOST_WIDE_INT size, bool push_p)
+{
+  rtx set_rtx, adjust_sp_rtx;
+  rtx dwarf = NULL_RTX;
+  int step = -UNITS_PER_WORD;
+  unsigned par_index = push_p ? 1 : 0;
+  unsigned adjust_sp_idx = push_p ? 0 : frame->num_x_saved;
+
+  rtx insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+
+  offset += step;
+
+  for (unsigned regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
+    {
+      if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
+	continue;
+      rtx reg = gen_rtx_REG (Pmode, regno);
+      rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
+	      stack_pointer_rtx,
+	      offset));
+      rtx src = push_p ? reg : mem;
+      rtx dst = push_p ? mem : reg;
+      set_rtx = gen_rtx_SET (dst, src);
+      XVECEXP (insn, 0, par_index) = set_rtx;
+      RTX_FRAME_RELATED_P (set_rtx) = 1;
+      offset += step;
+      par_index++;
+
+      if (!push_p)
+        dwarf = alloc_reg_note (REG_CFA_RESTORE, dst, dwarf);
+    }
+
+  adjust_sp_rtx
+      = gen_rtx_SET (stack_pointer_rtx,
+	    plus_constant (Pmode,
+	    stack_pointer_rtx,
+	    size));
+  XVECEXP (insn, 0, adjust_sp_idx) = adjust_sp_rtx;
+  RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
+
+  return insn;
 }
 
 /* Expand the "prologue" pattern.  */
@@ -4239,63 +4335,28 @@ riscv_expand_prologue (void)
       REG_NOTES (insn) = dwarf;
     }
 
+  bool use_zce_push = riscv_mzce_push_pop
+      && (frame->mask & ra_bit);
+
   /* Save the registers.  */
   if ((frame->mask | frame->fmask) != 0)
     {
       HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
-      if (!riscv_mzce_push_pop
-          || (frame->mask & ra_bit) == 0)
+      if (use_zce_push)
 	{
-	  insn = gen_add3_insn (stack_pointer_rtx,
-			    stack_pointer_rtx,
-			    GEN_INT (-step1));
-	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
-	  size -= step1;
-
-	  riscv_for_each_saved_reg (size, riscv_save_reg,
-	      false /* bool epilogue */, false /* bool maybe_eh_return */);
+	  insn = riscv_gen_pushpop (frame, size, -step1, TRUE);
+	  frame->mask = 0;
 	}
       else
-	{
-	  /* Initialize offset and start to create push behavior.  */
-	  int offset = size - UNITS_PER_WORD;
-	  int par_index = 1;
+        insn = gen_add3_insn (stack_pointer_rtx,
+			    stack_pointer_rtx,
+			    GEN_INT (-step1));
 
-	  insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+     RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+     size -= step1;
 
-	  for (int regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
-	    {
-	      if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
-		continue;
-	      rtx reg = gen_rtx_REG (Pmode, regno);
-	      rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
-		      stack_pointer_rtx,
-		      offset));
-	      rtx push_rtx = gen_rtx_SET (mem, reg);
-	      XVECEXP (insn, 0, par_index) = push_rtx;
-	      RTX_FRAME_RELATED_P (push_rtx) = 1;
-	      offset -= UNITS_PER_WORD;
-	      par_index++;
-	    }
-
-	  /* Add stack pointer adjustment rtx to the beginning of this
-	  parallel rtx.  */
-	  rtx adjust_sp_rtx
-	      = gen_rtx_SET (stack_pointer_rtx,
-		    plus_constant (Pmode,
-		    stack_pointer_rtx,
-		    -step1));
-	  XVECEXP (insn, 0, 0) = adjust_sp_rtx;
-	  RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
-
-	  insn = emit_insn (insn);
-
-	  /* The insn rtx 'insn' will change frame layout.
-	  We need to use RTX_FRAME_RELATED_P so that GCC is able to
-	  generate CFI (Call Frame Information) stuff.  */
-	  RTX_FRAME_RELATED_P (insn) = 1;
-	  size -= step1;
-	}
+     riscv_for_each_saved_reg (size, riscv_save_reg,
+	 false /* bool epilogue */, false /* bool maybe_eh_return */);
     }
 
   /* useful when you use -msave-restore */
@@ -4377,6 +4438,7 @@ riscv_expand_epilogue (int style)
 			      && riscv_use_save_libcall (frame));
   rtx ra = gen_rtx_REG (Pmode, RETURN_ADDR_REGNUM);
   rtx insn;
+  unsigned ra_bit = 1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST);
 
   /* We need to add memory barrier to prevent read from deallocated stack.  */
   bool need_barrier_p = (get_frame_size ()
@@ -4474,9 +4536,22 @@ riscv_expand_epilogue (int style)
   if (use_restore_libcall)
     frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
 
+  /* use zce pop insn. FALSE when libcall is used */
+  bool use_zce_pop = riscv_mzce_push_pop
+      && (frame->mask & ra_bit)
+      && step2 > 0
+      && !cfun->machine->interrupt_handler_p;
+
+  if (use_zce_pop)
+    {
+      insn = riscv_gen_pushpop (frame, frame->total_size, step2, FALSE);
+      insn = emit_insn (insn);
+      frame->mask = 0;
+    }
+
   /* Restore the registers.  */
   riscv_for_each_saved_reg (frame->total_size - step2, riscv_restore_reg,
-			    true, style == EXCEPTION_RETURN);
+			      true, style == EXCEPTION_RETURN);
 
   if (use_restore_libcall)
     {
@@ -4488,11 +4563,18 @@ riscv_expand_epilogue (int style)
   if (need_barrier_p)
     riscv_emit_stack_tie ();
 
+  if (use_zce_pop)
+    {
+      step2 = 0;
+      frame->mask = mask;
+    }
+
   /* Deallocate the final bit of the frame.  */
   if (step2 > 0)
     {
-      insn = emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
-				       GEN_INT (step2)));
+      if (!use_zce_pop)
+        insn = emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
+				         GEN_INT (step2)));
 
       rtx dwarf = NULL_RTX;
       rtx cfa_adjust_rtx = gen_rtx_PLUS (Pmode, stack_pointer_rtx,

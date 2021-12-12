@@ -20,6 +20,7 @@
 #define IN_TARGET_CODE 1
 
 namespace {
+static const int INVALID_RETVAL = 99;
 
 /*
   1. preprocessing:
@@ -71,40 +72,52 @@ to_s_regno (int regno)
 }
 
 void
-emit_zce_stack_insn (rtx_insn *push_rtx, rtx_insn *candidates[4], int n_args)
+emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, int n_args, bool push_p)
 {
-  rtx push_pat = PATTERN (push_rtx);
-  rtx new_push_insn;
+  rtx push_pat = PATTERN (old_rtx);
+  rtx new_insn;
+  bool jump_insn_p = FALSE;
   int n_old_rtx = XVECLEN (push_pat, 0);
   int n_rtx = n_old_rtx + n_args;
+  rtx_insn *insn;
 
-  new_push_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
+  new_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
 
   /* sw insns */
-  for (int i = 0; i < n_old_rtx - 1; i ++)
-    XVECEXP (new_push_insn, 0, i) = XVECEXP (push_pat, 0, i);
+  for (int i = 0; i < n_old_rtx; i ++)
+    XVECEXP (new_insn, 0, i) = XVECEXP (push_pat, 0, i);
 
   /* move insns */
   for (int i = 0; i < n_args; i ++)
     {
       rtx mv_pat = PATTERN (candidates[i]);
-      XVECEXP (new_push_insn, 0, n_old_rtx - 1 + i) = mv_pat;
+
+      /* ret pattern.  */
+      if (GET_CODE (mv_pat) == PARALLEL)
+        {
+	  jump_insn_p = TRUE;
+	  for (int j = i; j < XVECLEN (mv_pat, 0); j++)
+	    XVECEXP (new_insn, 0, n_old_rtx + j) = XVECEXP (mv_pat, 0, j - i);
+	  --n_args;
+	}
+      else
+	 XVECEXP (new_insn, 0, n_old_rtx + i) = mv_pat;
+
       delete_insn (candidates[i]);
     }
-
-  /* sp adjust insn */
-  XVECEXP (new_push_insn, 0, n_rtx - 1) = XVECEXP (push_pat, 0, n_old_rtx - 1);
 
   if (dump_file)
     {
       fprintf(dump_file, "New push insn:\n");
-      print_rtl (dump_file, new_push_insn);
+      print_rtl (dump_file, new_insn);
     }
 
-  rtx_insn *insn = emit_insn_after (new_push_insn, push_rtx);
+  if (jump_insn_p)
+    insn = emit_insn_after (new_insn, old_rtx);
+  else
+    insn = emit_insn_after (new_insn, old_rtx);
   RTX_FRAME_RELATED_P (insn) = 1;
-  delete_insn (push_rtx);
-  df_insn_rescan_all ();
+  delete_insn (old_rtx);
 }
 
 static void
@@ -128,7 +141,7 @@ mark_reg_dependencies (rtx_insn *insn, sbitmap bm, int *not_avail_mv_count)
       if (!bitmap_bit_p (bm, regno))
 	{
 	  bitmap_set_bit (bm, regno);
-	  *not_avail_mv_count ++;
+	  (*not_avail_mv_count) ++;
 	}
 
       if (dump_file)
@@ -153,7 +166,7 @@ mark_reg_dependencies (rtx_insn *insn, sbitmap bm, int *not_avail_mv_count)
       if (!bitmap_bit_p (bm, regno))
 	{
 	  bitmap_set_bit (bm, regno);
-	  *not_avail_mv_count ++;
+	  (*not_avail_mv_count) ++;
 	}
 
       if (dump_file)
@@ -165,7 +178,7 @@ mark_reg_dependencies (rtx_insn *insn, sbitmap bm, int *not_avail_mv_count)
     }
 }
 
-static unsigned int
+static void
 zce_push_argument_list (void)
 {
   basic_block bb;
@@ -179,18 +192,14 @@ zce_push_argument_list (void)
   bitmap_clear (args);
 
   if (dump_file)
-    fprintf (dump_file, "-------- seaching for push rtx --------\n");
+    fprintf (dump_file, "Seaching for push rtx\n");
 
   FOR_EACH_BB_FN (bb, cfun)
     {
       FOR_BB_INSNS (bb, insn)
 	{
-	  if (!push_rtx && NOTE_P (insn) && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END)
-	    {
-	      if (dump_file)
-		fprintf (dump_file, "-------- no argument list --------\n");
-	      return 0;
-	    }
+	  if (NOTE_P (insn) && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END)
+	    break;
 
 	  if (!(NONDEBUG_INSN_P (insn)
 	      || CALL_P (insn)))
@@ -200,7 +209,7 @@ zce_push_argument_list (void)
 
 	  if (!push_rtx
 	      && GET_CODE (pat) == PARALLEL
-	      && riscv_valid_stack_push_pop_p (pat, false))
+	      && riscv_valid_stack_push_pop_p (pat, true))
 	    {
 	      push_rtx = insn;
 	      /* ignore sp adjust insn  */
@@ -215,12 +224,12 @@ zce_push_argument_list (void)
 		{
 		  if (dump_file)
 		    fprintf (dump_file, "Saved 0 s-register, stop tracking move pattern.\n");
-		  return 0;
+		  return;
 		}
 
 	      total_count = total_count > 4 ? 4 : total_count;
 	      if (dump_file)
-		fprintf (dump_file, "-------- Saved s-register %d --------\n", total_count);
+		fprintf (dump_file, "Saved s-register %d\n", total_count);
 	      continue;
 	    }
 
@@ -245,7 +254,7 @@ zce_push_argument_list (void)
 		  not_avail_mv_count++;
 		  argument_list_candidates[src_regno] = insn;
 		  if (dump_file)
-		    fprintf (dump_file, "find pattern mv s%d,a%d\n", dst_regno, dst_regno);
+		    fprintf (dump_file, "Find pattern mv s%d,a%d\n", dst_regno, dst_regno);
 		}
 	    }
 
@@ -261,26 +270,107 @@ zce_push_argument_list (void)
 	      if (!argument_list_candidates[i])
 		break;
 
-	  if (dump_file)
-	    {
-	      fprintf (dump_file, "-------- bitmap release --------\npossible list: ");
-	      if (total_count != i)
-		fprintf (dump_file, "found mv pattern, but it is invalid for push. #mv = %d, #expected mv = %d\n", i, total_count);
-	      else if (i == 0)
-		fprintf (dump_file, "null\n");
-	      else if (i == 1)
-		fprintf (dump_file, "a0\n");
-	      else
-		fprintf (dump_file, "a0-a%d\n", i - 1);
-	    }
+	  if (dump_file
+	      && total_count != i)
+	    fprintf (dump_file, "Found mv pattern, but it is invalid for push. (not continuous)\n",);
 
 	  if (i > 0 && total_count == i)
-	    emit_zce_stack_insn (push_rtx, argument_list_candidates, i);
-	  return 0;
+	    emit_zce_stack_insn (push_rtx, argument_list_candidates, i, TRUE);
 	}
+	return;
+    }
+}
+
+int get_retval (rtx pat)
+{
+  rtx dest = SET_DEST (pat);
+
+  if (CONST_INT_P (dest)
+      && (INTVAL (dest) == -1
+       || INTVAL (dest) == 0
+       || INTVAL (dest) == 1))
+    return INTVAL (dest);
+
+  if (REG_P (dest) && REGNO (dest))
+    return 0;
+
+  return INVALID_RETVAL;
+}
+
+void zce_pop_ret_val (void)
+{
+  basic_block bb;
+  rtx_insn *insn = NULL, *pop_rtx = NULL;
+  rtx_insn *pop_candidates[3] = {NULL, };
+  /*
+    find NOTE_INSN_EPILOGUE_BEG, but pop_rtx not found => return
+    find NOTE_INSN_EPILOGUE_BEG, and pop_rtx is found => looking for a0
+  */
+
+  if (dump_file)
+    fprintf (dump_file, "Seaching for pop rtx\n");
+
+  FOR_EACH_BB_REVERSE_FN (bb, cfun)
+  {
+    int n_args = 0;
+    FOR_BB_INSNS_REVERSE (bb, insn)
+    {
+	/* TODO: ret val */
+	if (NOTE_P (insn)
+	    && NOTE_KIND (insn) == NOTE_INSN_EPILOGUE_BEG)
+	  break;
+
+	if (!(NONDEBUG_INSN_P (insn)
+	    || CALL_P (insn)))
+	  continue;
+
+	rtx pop_pat = PATTERN (insn);
+
+	if (GET_CODE (pop_pat) == PARALLEL
+	    && riscv_valid_stack_push_pop_p (pop_pat, false))
+	  {
+	    pop_rtx = insn;
+	    continue;
+	  }
+
+	/* pattern for `ret`.  */
+	if (JUMP_P (insn)
+	    && GET_CODE (pop_pat) == PARALLEL
+	    && XVECLEN (pop_pat, 0) == 2
+	    && GET_CODE (XVECEXP (pop_pat, 0, 0)) == SIMPLE_RETURN
+	    && GET_CODE (XVECEXP (pop_pat, 0, 1)) == USE)
+	  {
+	    pop_candidates [0] = insn;
+	    n_args += 2;
+	  }
+
+	/* pattern for return value.  */
+	if (pop_rtx
+	    && GET_CODE (pop_pat) == SET
+	    && REG_P (SET_SRC (pop_pat))
+	    && REGNO (SET_SRC (pop_pat)) == RETURN_ADDR_REGNUM
+	    && get_retval (pop_pat) != INVALID_RETVAL)
+	  {
+	    rtx_insn *use_insn = PREV_INSN (insn);
+
+	    if (GET_CODE (PATTERN (use_insn)) != USE)
+	      continue;
+	    else
+	      printf("GET_CODE (PATTERN (use_insn)) == USE\n");
+
+	    pop_candidates [1] = insn;
+	    pop_candidates [2] = use_insn;
+	    n_args += 0;
+	    break;
+	  }
     }
 
-  return 0;
+    if (pop_rtx && pop_candidates [0])
+      emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, TRUE);
+    if (pop_rtx && pop_candidates [1])
+      printf("found return value pattern\n");
+    return;
+  }
 }
 
 const pass_data pass_data_zce_push =
@@ -307,7 +397,11 @@ public:
   virtual bool gate (function *)
     { return riscv_mzce_push_pop; }
   virtual unsigned int execute (function *)
-    { return zce_push_argument_list ();}
+    {
+      zce_push_argument_list ();
+      zce_pop_ret_val ();
+      return 0;
+    }
 }; // class pass_zce_push
 
 } // anon namespace

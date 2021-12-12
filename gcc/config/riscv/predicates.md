@@ -228,8 +228,11 @@
 (define_special_predicate "riscv_stack_push_operation"
   (match_code "parallel")
 {
-  /* To verify 'push' operation, pass 'true' for the second argument.
-     See the implementation in nds32-predicates.c for details.  */
   return riscv_valid_stack_push_pop_p (op, true);
 })
 
+(define_special_predicate "riscv_stack_pop_operation"
+  (match_code "parallel")
+{
+  return riscv_valid_stack_push_pop_p (op, false);
+})
