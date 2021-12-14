@@ -2094,6 +2094,18 @@ riscv_output_return ()
   return "ret";
 }
 
+const char *
+riscv_output_pop (rtx op)
+{
+    unsigned n_rtx = XVECLEN (op, 0);
+    rtx use = XVECEXP (op, 0, n_rtx - 1);
+    rtx ret = XVECEXP (op, 0, n_rtx - 2);
+    bool popret_p = GET_CODE (ret) == SIMPLE_RETURN
+	          &&  GET_CODE (use) == USE;
+
+    return popret_p ? "popret\t{%L0},{%H0},%S0" : "pop\t{%L0},{%H0},%S0";
+}
+
 
 /* Return true if CMP1 is a suitable second operand for integer ordering
    test CODE.  See also the *sCC patterns in riscv.md.  */
@@ -3391,27 +3403,24 @@ riscv_print_ret_val (FILE *file, rtx op)
       (const_int 0 [0]))
     (use (reg/i:DI 10 a0))
   */
-  unsigned n_rtx = XVECLEN (op, 0);
-  for (int idx = n_rtx - 1; idx >= 0; --idx)
+  rtx elt = XVECEXP (op, 0, 0);
+  if (GET_CODE (elt) == SET
+      && REG_P (SET_DEST (elt))
+      && REGNO (SET_DEST (elt)) == RETURN_VALUE_REGNUM
+      && CONST_INT_P (SET_SRC (elt)))
     {
-      rtx elt = XVECEXP (op, 0, idx - 1);
-      if (GET_CODE (elt) == SET
-          && CONST_INT_P (SET_SRC (elt))
-	  && REG_P (SET_DEST (elt)))
-	{
-	  fprintf (file, "%ld", INTVAL (SET_SRC (elt)));
-	  return;
-	}
+      fprintf (file, "%ld", INTVAL (SET_SRC (elt)));
+      return;
     }
 }
 
 static void
-riscv_print_push_size (FILE *file, rtx op)
+riscv_print_pop_size (FILE *file, rtx op)
 {
   unsigned sp_adjust_idx = XVECLEN (op, 0) - 1;
   rtx sp_adjust_rtx = XVECEXP (op, 0, sp_adjust_idx);
 
-  /* Skip ret pattern.  */
+  /* Skip ret or pattern.  */
   while (GET_CODE (sp_adjust_rtx) != SET)
     sp_adjust_rtx = XVECEXP (op, 0, --sp_adjust_idx);
 
@@ -3471,7 +3480,8 @@ riscv_print_reglist (FILE *file, rtx op)
   */
   int total_count = XVECLEN (op, 0);
   int n_regs = 0;
-  bool push_p = REG_P (SET_SRC (XVECEXP (op, 0, 0)));
+  bool push_p = GET_CODE (XVECEXP (op, 0, 0)) == SET
+      && GET_CODE (SET_SRC (XVECEXP (op, 0, 0))) == PLUS;
 
   for (int idx = 0; idx < total_count; ++idx)
     {
@@ -3487,9 +3497,9 @@ riscv_print_reglist (FILE *file, rtx op)
 	n_regs ++;
     }
 
-  if (n_regs > 2)
-    fprintf (file, "ra,s0-s%u", total_count - 1);
-  else if (n_regs > 1)
+  if (n_regs > 3)
+    fprintf (file, "ra,s0-s%u", n_regs - 2);
+  else if (n_regs > 2)
     fprintf (file, "ra,s0");
   else
     fputs("ra", file);
@@ -3557,7 +3567,7 @@ riscv_print_operand (FILE *file, rtx op, int letter)
       break;
 
     case 'S':
-      riscv_print_push_size (file, op);
+      riscv_print_pop_size (file, op);
       break;
 
     default:
@@ -4202,9 +4212,16 @@ riscv_emit_stack_tie (void)
     emit_insn (gen_stack_tiedi (stack_pointer_rtx, hard_frame_pointer_rtx));
 }
 
+
+bool
+regno_p(rtx pat, unsigned regno)
+{
+  return REG_P (pat)
+      && REGNO (pat) == regno;
+}
+
 /* Function to check whether the OP is a valid stack push/pop operation.
    This part is borrowed from nds32 nds32_valid_stack_push_pop_p */
-// TODO: add check for ra
 bool
 riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 {
@@ -4222,24 +4239,48 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   total_count = XVECLEN (op, 0);
   sp_adjust_rtx_index = push_p ? 0 : total_count - 1;
 
-  /* At least sp + one callee save register rtx */
+  /* At least sp + one callee save/restore register rtx */
   if (total_count < 2)
     return false;
 
-  /* Perform some quick check for that every element should be 'set'.  */
+  /* Perform some quick check for that every element should be 'set',
+     for pop, it might contain `ret` and `ret value` pattern.  */
   for (index = 0; index < total_count; index++)
     {
       elt = XVECEXP (op, 0, index);
-      /* maybe popret pattern */
+
+      /* skip pop return value rtx */
+      if (!push_p && GET_CODE (elt) == SET
+	  && regno_p (SET_DEST (elt), RETURN_VALUE_REGNUM)
+	  && total_count >= 4
+	  && index + 1 < total_count
+	  && GET_CODE (XVECEXP (op, 0, index + 1)) == USE)
+	{
+	  rtx use_reg = XEXP (XVECEXP (op, 0, index + 1), 0);
+
+	  if (!regno_p (use_reg, RETURN_VALUE_REGNUM))
+	    return false;
+
+	  index += 1;
+	  continue;
+	}
+
+      /* skip ret rtx */
       if (!push_p && GET_CODE (elt) == SIMPLE_RETURN
 	  && total_count >= 4
 	  && index + 1 < total_count
 	  && GET_CODE (XVECEXP (op, 0, index + 1)) == USE)
 	{
+	  rtx use_reg = XEXP (XVECEXP (op, 0, index + 1), 0);
+
+	  if (!regno_p (use_reg, RETURN_ADDR_REGNUM))
+	    return false;
+
+	  index += 1;
 	  sp_adjust_rtx_index -= 2;
-	  index += 2;
 	  continue;
 	}
+
       if (GET_CODE (elt) != SET)
 	return false;
     }
@@ -4249,9 +4290,8 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   elt_plus = SET_SRC (elt);
 
   /* Check this is (set (stack_reg) (plus stack_reg const)) pattern.  */
-  if (GET_CODE (elt_reg) != REG
-      || GET_CODE (elt_plus) != PLUS
-      || REGNO (elt_reg) != STACK_POINTER_REGNUM)
+  if (GET_CODE (elt_plus) != PLUS
+      || !regno_p (elt_reg, STACK_POINTER_REGNUM))
     return false;
 
   /* Pass all test, this is a valid rtx.  */
@@ -4290,7 +4330,7 @@ riscv_gen_pushpop (struct riscv_frame_info *frame,
       par_index++;
 
       if (!push_p)
-        dwarf = alloc_reg_note (REG_CFA_RESTORE, dst, dwarf);
+	dwarf = alloc_reg_note (REG_CFA_RESTORE, dst, dwarf);
     }
 
   adjust_sp_rtx

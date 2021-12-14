@@ -18,4 +18,4 @@
    <http://www.gnu.org/licenses/>.  */
 
 INSERT_PASS_AFTER (pass_rtl_store_motion, 1, pass_shorten_memrefs);
-INSERT_PASS_AFTER (pass_thread_prologue_and_epilogue, 1, pass_zce_push);
+INSERT_PASS_AFTER (pass_cprop_hardreg, 1, pass_zce_push);

@@ -72,43 +72,60 @@ to_s_regno (int regno)
 }
 
 void
-emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, int n_args, bool push_p)
+emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, bool push_p)
 {
-  rtx push_pat = PATTERN (old_rtx);
+  rtx old_pat = PATTERN (old_rtx);
   rtx new_insn;
   bool jump_insn_p = FALSE;
-  int n_old_rtx = XVECLEN (push_pat, 0);
-  int n_rtx = n_old_rtx + n_args;
   rtx_insn *insn;
+  unsigned old_idx = 0, new_idx = 0, can_idx = 0;
+  unsigned n_old = XVECLEN (old_pat, 0);
+  unsigned n_new = n_old + n_args;
 
-  new_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_rtx));
+  if (n_args == 0)
+    return;
 
-  /* sw insns */
-  for (int i = 0; i < n_old_rtx; i ++)
-    XVECEXP (new_insn, 0, i) = XVECEXP (push_pat, 0, i);
+  new_insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_new));
 
-  /* move insns */
-  for (int i = 0; i < n_args; i ++)
+  /* return value insn in pop */
+  if (!push_p)
     {
-      rtx mv_pat = PATTERN (candidates[i]);
+      if (candidates[0])
+	{
+	  XVECEXP (new_insn, 0, 0) = PATTERN (candidates[0]);
+	  XVECEXP (new_insn, 0, 1) = PATTERN (candidates[1]);
+	  delete_insn (candidates[0]);
+	  delete_insn (candidates[1]);
+	  new_idx += 2;
+	}
+      can_idx += 2;
+    }
+
+  /* Copy old insns.  */
+  for (; old_idx < n_old && new_idx < n_new; old_idx ++, new_idx ++)
+    XVECEXP (new_insn, 0, new_idx) = XVECEXP (old_pat, 0, old_idx);
+
+  /* Add additional rtx.  */
+  for (;new_idx < n_new; new_idx ++, can_idx ++)
+    {
+      rtx new_pat = PATTERN (candidates[can_idx]);
 
       /* ret pattern.  */
-      if (GET_CODE (mv_pat) == PARALLEL)
-        {
+      if (GET_CODE (new_pat) == PARALLEL)
+	{
 	  jump_insn_p = TRUE;
-	  for (int j = i; j < XVECLEN (mv_pat, 0); j++)
-	    XVECEXP (new_insn, 0, n_old_rtx + j) = XVECEXP (mv_pat, 0, j - i);
-	  --n_args;
+	  for (int i = 0; i < XVECLEN (new_pat, 0); i++, n_args--)
+	    XVECEXP (new_insn, 0, new_idx++) = XVECEXP (new_pat, 0, i);
 	}
       else
-	 XVECEXP (new_insn, 0, n_old_rtx + i) = mv_pat;
+	XVECEXP (new_insn, 0, new_idx) = new_pat;
 
-      delete_insn (candidates[i]);
+      delete_insn (candidates[can_idx]);
     }
 
   if (dump_file)
     {
-      fprintf(dump_file, "New push insn:\n");
+      fprintf(dump_file, "New insn:\n");
       print_rtl (dump_file, new_insn);
     }
 
@@ -183,7 +200,6 @@ zce_push_argument_list (void)
 {
   basic_block bb;
   int total_count = 0, not_avail_mv_count = 0;
-  rtx set_src;
   rtx_insn *push_rtx = NULL;
   rtx_insn *argument_list_candidates[4] = {NULL, };
   rtx_insn *insn;
@@ -198,8 +214,14 @@ zce_push_argument_list (void)
     {
       FOR_BB_INSNS (bb, insn)
 	{
-	  if (NOTE_P (insn) && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END)
-	    break;
+	  if (!push_rtx
+	      && NOTE_P (insn)
+	      && NOTE_KIND (insn) == NOTE_INSN_PROLOGUE_END)
+	    {
+	      if (dump_file)
+		fprintf (dump_file, "Push rtx not found.\n");
+	      return;
+	    }
 
 	  if (!(NONDEBUG_INSN_P (insn)
 	      || CALL_P (insn)))
@@ -211,14 +233,12 @@ zce_push_argument_list (void)
 	      && GET_CODE (pat) == PARALLEL
 	      && riscv_valid_stack_push_pop_p (pat, true))
 	    {
-	      push_rtx = insn;
-	      /* ignore sp adjust insn  */
-	      total_count = XVECLEN (pat, 0) - 1;
+	      if (dump_file)
+		fprintf (dump_file, "Found push rtx\n");
 
-	      /* check first saved register is ra or not  */
-	      set_src = SET_SRC (XVECEXP (pat, 0, 1));
-	      if (REGNO (set_src) == RETURN_ADDR_REGNUM)
-		total_count --;
+	      push_rtx = insn;
+	      /* ignore ra save and sp adjust insn  */
+	      total_count = XVECLEN (pat, 0) - 2;
 
 	      if (total_count <= 0)
 		{
@@ -249,12 +269,12 @@ zce_push_argument_list (void)
 		  && dst_regno < total_count
 		  && !bitmap_bit_p (args, src_regno))
 		{
-		  // valid
 		  bitmap_set_bit (args, src_regno);
 		  not_avail_mv_count++;
 		  argument_list_candidates[src_regno] = insn;
 		  if (dump_file)
 		    fprintf (dump_file, "Find pattern mv s%d,a%d\n", dst_regno, dst_regno);
+		  continue;
 		}
 	    }
 
@@ -272,27 +292,25 @@ zce_push_argument_list (void)
 
 	  if (dump_file
 	      && total_count != i)
-	    fprintf (dump_file, "Found mv pattern, but it is invalid for push. (not continuous)\n",);
+	    fprintf (dump_file, "No argument list or argument list is invalid for push.\n");
 
 	  if (i > 0 && total_count == i)
 	    emit_zce_stack_insn (push_rtx, argument_list_candidates, i, TRUE);
+
+	  return;
 	}
-	return;
     }
 }
 
 int get_retval (rtx pat)
 {
-  rtx dest = SET_DEST (pat);
+  rtx dest = SET_SRC (pat);
 
   if (CONST_INT_P (dest)
       && (INTVAL (dest) == -1
        || INTVAL (dest) == 0
        || INTVAL (dest) == 1))
     return INTVAL (dest);
-
-  if (REG_P (dest) && REGNO (dest))
-    return 0;
 
   return INVALID_RETVAL;
 }
@@ -312,13 +330,20 @@ void zce_pop_ret_val (void)
 
   FOR_EACH_BB_REVERSE_FN (bb, cfun)
   {
-    int n_args = 0;
+    unsigned n_args = 0;
     FOR_BB_INSNS_REVERSE (bb, insn)
-    {
-	/* TODO: ret val */
-	if (NOTE_P (insn)
+      {
+	if (!pop_rtx
+	    && NOTE_P (insn)
 	    && NOTE_KIND (insn) == NOTE_INSN_EPILOGUE_BEG)
-	  break;
+	  return;
+
+	if (NOTE_P (insn)
+	    && NOTE_KIND (insn) == NOTE_INSN_FUNCTION_BEG)
+	  {
+	    emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, FALSE);
+	    return;
+	  };
 
 	if (!(NONDEBUG_INSN_P (insn)
 	    || CALL_P (insn)))
@@ -340,36 +365,47 @@ void zce_pop_ret_val (void)
 	    && GET_CODE (XVECEXP (pop_pat, 0, 0)) == SIMPLE_RETURN
 	    && GET_CODE (XVECEXP (pop_pat, 0, 1)) == USE)
 	  {
-	    pop_candidates [0] = insn;
-	    n_args += 2;
+	    rtx use_reg = XEXP (XVECEXP (pop_pat, 0, 1), 0);
+	    if (REG_P (use_reg)
+	      && REGNO (use_reg) == RETURN_ADDR_REGNUM)
+	      {
+		pop_candidates [2] = insn;
+		n_args += 2;
+		continue;
+	      }
 	  }
+
+	if (!pop_rtx)
+	  continue;
 
 	/* pattern for return value.  */
-	if (pop_rtx
-	    && GET_CODE (pop_pat) == SET
-	    && REG_P (SET_SRC (pop_pat))
-	    && REGNO (SET_SRC (pop_pat)) == RETURN_ADDR_REGNUM
-	    && get_retval (pop_pat) != INVALID_RETVAL)
+	if (!pop_candidates [0]
+	    && GET_CODE (pop_pat) == USE)
 	  {
-	    rtx_insn *use_insn = PREV_INSN (insn);
+	    rtx_insn *set_insn = PREV_INSN (insn);
 
-	    if (GET_CODE (PATTERN (use_insn)) != USE)
-	      continue;
-	    else
-	      printf("GET_CODE (PATTERN (use_insn)) == USE\n");
-
-	    pop_candidates [1] = insn;
-	    pop_candidates [2] = use_insn;
-	    n_args += 0;
-	    break;
+	    if (regno_p (XEXP (pop_pat, 0), RETURN_VALUE_REGNUM)
+		&& insn
+		&& GET_CODE (PATTERN (set_insn)) == SET
+		&& regno_p (SET_DEST (PATTERN (set_insn)), RETURN_VALUE_REGNUM))
+	      {
+		int retval = get_retval (PATTERN (set_insn));
+		if (retval != INVALID_RETVAL)
+		  {
+		    pop_candidates [0] = set_insn;
+		    pop_candidates [1] = insn;
+		    n_args += 2;
+		  }
+		break;
+	      }
 	  }
-    }
+      }
 
-    if (pop_rtx && pop_candidates [0])
-      emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, TRUE);
-    if (pop_rtx && pop_candidates [1])
-      printf("found return value pattern\n");
-    return;
+    if (pop_rtx)
+      {
+	emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, FALSE);
+	return;
+      }
   }
 }
 
