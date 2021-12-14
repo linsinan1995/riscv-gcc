@@ -3436,7 +3436,7 @@ riscv_print_arglist (FILE *file, rtx op)
   rtx ele;
 
   /* ignore argument list. */
-  for (idx = XVECLEN (op, 0) - 2; idx >= 0; --idx)
+  for (idx = XVECLEN (op, 0) - 1; idx >= 0; --idx)
     {
       ele = XVECEXP (op, 0, idx);
       if (!(GET_CODE (ele) == SET
@@ -4301,15 +4301,16 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 /* Generate push/pop rtx */
 rtx
 riscv_gen_pushpop (struct riscv_frame_info *frame,
-    HOST_WIDE_INT offset, HOST_WIDE_INT size, bool push_p)
+    HOST_WIDE_INT offset, HOST_WIDE_INT size, unsigned pop_p)
 {
   rtx set_rtx, adjust_sp_rtx;
   rtx dwarf = NULL_RTX;
   int step = -UNITS_PER_WORD;
-  unsigned par_index = push_p ? 1 : 0;
-  unsigned adjust_sp_idx = push_p ? 0 : frame->num_x_saved;
+  unsigned par_index = pop_p ? 0 : 1;
+  unsigned adjust_sp_idx = pop_p ? frame->num_x_saved : 0;
+  unsigned n_elt = (pop_p > 1) ? frame->num_x_saved + 3: frame->num_x_saved + 1;
 
-  rtx insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+  rtx insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_elt));
 
   offset += step;
 
@@ -4321,15 +4322,15 @@ riscv_gen_pushpop (struct riscv_frame_info *frame,
       rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
 	      stack_pointer_rtx,
 	      offset));
-      rtx src = push_p ? reg : mem;
-      rtx dst = push_p ? mem : reg;
+      rtx src = pop_p ? mem : reg;
+      rtx dst = pop_p ? reg : mem;
       set_rtx = gen_rtx_SET (dst, src);
       XVECEXP (insn, 0, par_index) = set_rtx;
       RTX_FRAME_RELATED_P (set_rtx) = 1;
       offset += step;
       par_index++;
 
-      if (!push_p)
+      if (pop_p)
 	dwarf = alloc_reg_note (REG_CFA_RESTORE, dst, dwarf);
     }
 
@@ -4341,6 +4342,12 @@ riscv_gen_pushpop (struct riscv_frame_info *frame,
   XVECEXP (insn, 0, adjust_sp_idx) = adjust_sp_rtx;
   RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
 
+  if (pop_p > 1)
+    {
+      rtx ra = gen_rtx_REG (Pmode, RETURN_ADDR_REGNUM);
+      XVECEXP (insn, 0, adjust_sp_idx + 1) = gen_simple_return ();
+      XVECEXP (insn, 0, adjust_sp_idx + 2) = gen_rtx_USE (Pmode, ra);
+    }
   return insn;
 }
 
@@ -4384,7 +4391,7 @@ riscv_expand_prologue (void)
       HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
       if (use_zce_push)
 	{
-	  insn = riscv_gen_pushpop (frame, size, -step1, TRUE);
+	  insn = riscv_gen_pushpop (frame, size, -step1, 0);
 	  frame->mask = 0;
 	}
       else
@@ -4584,8 +4591,14 @@ riscv_expand_epilogue (int style)
 
   if (use_zce_pop)
     {
-      insn = riscv_gen_pushpop (frame, frame->total_size, step2, FALSE);
-      insn = emit_insn (insn);
+      /* if pop_type = 1, generarte popret */
+      int pop_type = style != SIBCALL_RETURN;
+      insn = riscv_gen_pushpop (frame, frame->total_size, step2, 1 + pop_type);
+      print_rtl (stderr, insn);
+      if (pop_type)
+        insn = emit_jump_insn (insn);
+      else
+        insn = emit_insn (insn);
       frame->mask = 0;
     }
 
@@ -4655,7 +4668,7 @@ riscv_expand_epilogue (int style)
       else
 	emit_jump_insn (gen_riscv_uret ());
     }
-  else if (style != SIBCALL_RETURN)
+  else if (style != SIBCALL_RETURN && !use_zce_pop)
     emit_jump_insn (gen_simple_return_internal (ra));
 }
 

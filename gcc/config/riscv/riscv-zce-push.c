@@ -76,7 +76,6 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
 {
   rtx old_pat = PATTERN (old_rtx);
   rtx new_insn;
-  bool jump_insn_p = FALSE;
   rtx_insn *insn;
   unsigned old_idx = 0, new_idx = 0, can_idx = 0;
   unsigned n_old = XVECLEN (old_pat, 0);
@@ -109,17 +108,7 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
   for (;new_idx < n_new; new_idx ++, can_idx ++)
     {
       rtx new_pat = PATTERN (candidates[can_idx]);
-
-      /* ret pattern.  */
-      if (GET_CODE (new_pat) == PARALLEL)
-	{
-	  jump_insn_p = TRUE;
-	  for (int i = 0; i < XVECLEN (new_pat, 0); i++, n_args--)
-	    XVECEXP (new_insn, 0, new_idx++) = XVECEXP (new_pat, 0, i);
-	}
-      else
-	XVECEXP (new_insn, 0, new_idx) = new_pat;
-
+      XVECEXP (new_insn, 0, new_idx) = new_pat;
       delete_insn (candidates[can_idx]);
     }
 
@@ -129,10 +118,7 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
       print_rtl (dump_file, new_insn);
     }
 
-  if (jump_insn_p)
-    insn = emit_insn_after (new_insn, old_rtx);
-  else
-    insn = emit_insn_after (new_insn, old_rtx);
+  insn = emit_insn_after (new_insn, old_rtx);
   RTX_FRAME_RELATED_P (insn) = 1;
   delete_insn (old_rtx);
 }
@@ -319,11 +305,7 @@ void zce_pop_ret_val (void)
 {
   basic_block bb;
   rtx_insn *insn = NULL, *pop_rtx = NULL;
-  rtx_insn *pop_candidates[3] = {NULL, };
-  /*
-    find NOTE_INSN_EPILOGUE_BEG, but pop_rtx not found => return
-    find NOTE_INSN_EPILOGUE_BEG, and pop_rtx is found => looking for a0
-  */
+  rtx_insn *pop_candidates[2] = {NULL, };
 
   if (dump_file)
     fprintf (dump_file, "Seaching for pop rtx\n");
@@ -345,8 +327,7 @@ void zce_pop_ret_val (void)
 	    return;
 	  };
 
-	if (!(NONDEBUG_INSN_P (insn)
-	    || CALL_P (insn)))
+	if (!(NONDEBUG_INSN_P (insn)))
 	  continue;
 
 	rtx pop_pat = PATTERN (insn);
@@ -356,23 +337,6 @@ void zce_pop_ret_val (void)
 	  {
 	    pop_rtx = insn;
 	    continue;
-	  }
-
-	/* pattern for `ret`.  */
-	if (JUMP_P (insn)
-	    && GET_CODE (pop_pat) == PARALLEL
-	    && XVECLEN (pop_pat, 0) == 2
-	    && GET_CODE (XVECEXP (pop_pat, 0, 0)) == SIMPLE_RETURN
-	    && GET_CODE (XVECEXP (pop_pat, 0, 1)) == USE)
-	  {
-	    rtx use_reg = XEXP (XVECEXP (pop_pat, 0, 1), 0);
-	    if (REG_P (use_reg)
-	      && REGNO (use_reg) == RETURN_ADDR_REGNUM)
-	      {
-		pop_candidates [2] = insn;
-		n_args += 2;
-		continue;
-	      }
 	  }
 
 	if (!pop_rtx)
