@@ -69,6 +69,7 @@
 
 (define_constants
   [(RETURN_ADDR_REGNUM		1)
+   (SP_REGNUM 			2)
    (GP_REGNUM 			3)
    (T0_REGNUM			5)
    (T1_REGNUM			6)

@@ -224,3 +224,9 @@
     return riscv_mzce_beqi;
   return riscv_mzce_bnei;
 })
+
+(define_special_predicate "riscv_stack_push_operation"
+  (match_code "parallel")
+{
+  return riscv_valid_stack_push_pop_p (op, true);
+})
