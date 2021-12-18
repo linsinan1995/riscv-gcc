@@ -317,6 +317,97 @@ int get_return_value (rtx pat, int *retval)
   return FALSE;
 }
 
+void zce_pop_ret_val (void)
+{
+  basic_block bb;
+  rtx_insn *insn = NULL, *pop_rtx = NULL;
+  rtx_insn *pop_candidates[3] = {NULL, };
+  /*
+    find NOTE_INSN_EPILOGUE_BEG, but pop_rtx not found => return
+    find NOTE_INSN_EPILOGUE_BEG, and pop_rtx is found => looking for a0
+  */
+
+  FOR_EACH_BB_REVERSE_FN (bb, cfun)
+  {
+    unsigned n_args = 0;
+    FOR_BB_INSNS_REVERSE (bb, insn)
+      {
+	if (!pop_rtx
+	    && NOTE_P (insn)
+	    && NOTE_KIND (insn) == NOTE_INSN_EPILOGUE_BEG)
+	  return;
+
+	if (NOTE_P (insn)
+	    && NOTE_KIND (insn) == NOTE_INSN_FUNCTION_BEG)
+	  {
+	    emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, FALSE);
+	    return;
+	  };
+
+	if (!(NONDEBUG_INSN_P (insn)
+	    || CALL_P (insn)))
+	  continue;
+
+	rtx pop_pat = PATTERN (insn);
+
+	if (GET_CODE (pop_pat) == PARALLEL
+	    && riscv_valid_stack_push_pop_p (pop_pat, false))
+	  {
+	    pop_rtx = insn;
+	    continue;
+	  }
+
+	/* pattern for `ret`.  */
+	if (JUMP_P (insn)
+	    && GET_CODE (pop_pat) == PARALLEL
+	    && XVECLEN (pop_pat, 0) == 2
+	    && GET_CODE (XVECEXP (pop_pat, 0, 0)) == SIMPLE_RETURN
+	    && GET_CODE (XVECEXP (pop_pat, 0, 1)) == USE)
+	  {
+	    rtx use_reg = XEXP (XVECEXP (pop_pat, 0, 1), 0);
+	    if (REG_P (use_reg)
+	      && REGNO (use_reg) == RETURN_ADDR_REGNUM)
+	      {
+		pop_candidates [2] = insn;
+		n_args += 2;
+		continue;
+	      }
+	  }
+
+	if (!pop_rtx)
+	  continue;
+
+	/* pattern for return value.  */
+	if (!pop_candidates [0]
+	    && GET_CODE (pop_pat) == USE)
+	  {
+	    rtx_insn *set_insn = PREV_INSN (insn);
+
+	    if (riscv_check_regno (XEXP (pop_pat, 0), RETURN_VALUE_REGNUM)
+		&& insn
+		&& GET_CODE (PATTERN (set_insn)) == SET
+		&& riscv_check_regno (SET_DEST (PATTERN (set_insn)), RETURN_VALUE_REGNUM))
+	      {
+		int retval;
+		if (get_return_value (PATTERN (set_insn), &retval))
+		  {
+		    pop_candidates [0] = set_insn;
+		    pop_candidates [1] = insn;
+		    n_args += 2;
+		  }
+		break;
+	      }
+	  }
+      }
+
+    if (pop_rtx)
+      {
+	emit_zce_stack_insn (pop_rtx, pop_candidates, n_args, FALSE);
+	return;
+      }
+  }
+}
+
 const pass_data pass_data_zce_push_pop =
 {
   RTL_PASS, /* type */
@@ -343,6 +434,7 @@ public:
   virtual unsigned int execute (function *)
     {
       zce_push_argument_list ();
+      zce_pop_ret_val ();
       return 0;
     }
 }; // class pass_zce_push_pop
