@@ -326,6 +326,7 @@ extern const char *riscv_default_mtune (int argc, const char **argv);
 #define HARD_FRAME_POINTER_REGNUM 8
 #define STACK_POINTER_REGNUM 2
 #define THREAD_POINTER_REGNUM 4
+#define RETURN_VALUE_REGNUM 10
 
 /* These two registers don't really exist: they get eliminated to either
    the stack or hard frame pointer.  */

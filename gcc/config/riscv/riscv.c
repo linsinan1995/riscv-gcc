@@ -2094,6 +2094,17 @@ riscv_output_return ()
   return "ret";
 }
 
+bool
+riscv_output_popret_p (rtx op)
+{
+    unsigned n_rtx = XVECLEN (op, 0);
+    rtx use = XVECEXP (op, 0, n_rtx - 1);
+    rtx ret = XVECEXP (op, 0, n_rtx - 2);
+
+    return GET_CODE (ret) == SIMPLE_RETURN
+	&&  GET_CODE (use) == USE;
+}
+
 
 /* Return true if CMP1 is a suitable second operand for integer ordering
    test CODE.  See also the *sCC patterns in riscv.md.  */
@@ -3384,6 +3395,44 @@ riscv_memmodel_needs_release_fence (enum memmodel model)
 }
 
 static void
+riscv_print_pop_size (FILE *file, rtx op)
+{
+  unsigned sp_adjust_idx = XVECLEN (op, 0) - 1;
+  rtx sp_adjust_rtx = XVECEXP (op, 0, sp_adjust_idx);
+
+  /* Skip ret or pattern.  */
+  while (GET_CODE (sp_adjust_rtx) != SET)
+    sp_adjust_rtx = XVECEXP (op, 0, --sp_adjust_idx);
+
+  rtx elt_plus = SET_SRC (sp_adjust_rtx);
+  fprintf (file, "%ld", INTVAL (XEXP (elt_plus, 1)));
+}
+
+static void
+riscv_print_arglist (FILE *file, rtx op)
+{
+  int total_count = 0;
+  int idx;
+  rtx ele;
+
+  /* ignore argument list. */
+  for (idx = XVECLEN (op, 0) - 1; idx >= 0; --idx)
+    {
+      ele = XVECEXP (op, 0, idx);
+      if (!(GET_CODE (ele) == SET
+	  && REG_P (SET_SRC (ele))
+	  && REG_P (SET_DEST (ele))))
+	break;
+      ++total_count;
+    }
+
+  if (total_count > 1)
+    fprintf (file, "a0-a%u", total_count - 1);
+  else if (total_count == 1)
+    fprintf (file, "a0");
+}
+
+static void
 riscv_print_reglist (FILE *file, rtx op)
 {
   /* we only deal with three formats:
@@ -3487,6 +3536,14 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'L':
       riscv_print_reglist (file, op);
+      break;
+
+    case 'G':
+      riscv_print_arglist (file, op);
+      break;
+
+    case 'S':
+      riscv_print_pop_size (file, op);
       break;
 
     default:
@@ -4316,6 +4373,7 @@ riscv_expand_prologue (void)
 	 false /* bool epilogue */, false /* bool maybe_eh_return */);
     }
 
+  /* useful when you use -msave-restore */
   frame->mask = mask; /* Undo the above fib.  */
 
   /* Set up the frame pointer, if we're using one.  */
@@ -4394,6 +4452,11 @@ riscv_expand_epilogue (int style)
 			      && riscv_use_save_libcall (frame));
   rtx ra = gen_rtx_REG (Pmode, RETURN_ADDR_REGNUM);
   rtx insn;
+
+  bool use_zce_pop = riscv_mzce_push_pop
+      && (frame->mask & (1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST)))
+      && !use_restore_libcall
+      && !(crtl->calls_eh_return);
 
   /* We need to add memory barrier to prevent read from deallocated stack.  */
   bool need_barrier_p = (get_frame_size ()
@@ -4491,6 +4554,13 @@ riscv_expand_epilogue (int style)
   if (use_restore_libcall)
     frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
 
+  if (use_zce_pop)
+    {
+      insn = riscv_gen_pushpop (frame, frame->total_size, step2, FALSE);
+      insn = emit_insn (insn);
+      frame->mask = 0;
+    }
+
   /* Restore the registers.  */
   riscv_for_each_saved_reg (frame->total_size - step2, riscv_restore_reg,
 			   true, style == EXCEPTION_RETURN);
@@ -4505,11 +4575,16 @@ riscv_expand_epilogue (int style)
   if (need_barrier_p)
     riscv_emit_stack_tie ();
 
+  if (use_zce_pop)
+    frame->mask = mask;
+
   /* Deallocate the final bit of the frame.  */
   if (step2 > 0)
     {
-      insn = emit_insn (gen_add3_insn (stack_pointer_rtx, stack_pointer_rtx,
-					GEN_INT (step2)));
+      if (!use_zce_pop)
+	insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
+					 stack_pointer_rtx,
+					 GEN_INT (step2)));
 
       rtx dwarf = NULL_RTX;
       rtx cfa_adjust_rtx = gen_rtx_PLUS (Pmode, stack_pointer_rtx,
