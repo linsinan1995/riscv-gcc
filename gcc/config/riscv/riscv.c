@@ -3409,30 +3409,6 @@ riscv_print_pop_size (FILE *file, rtx op)
 }
 
 static void
-riscv_print_arglist (FILE *file, rtx op)
-{
-  int total_count = 0;
-  int idx;
-  rtx ele;
-
-  /* ignore argument list. */
-  for (idx = XVECLEN (op, 0) - 1; idx >= 0; --idx)
-    {
-      ele = XVECEXP (op, 0, idx);
-      if (!(GET_CODE (ele) == SET
-	  && REG_P (SET_SRC (ele))
-	  && REG_P (SET_DEST (ele))))
-	break;
-      ++total_count;
-    }
-
-  if (total_count > 1)
-    fprintf (file, "a0-a%u", total_count - 1);
-  else if (total_count == 1)
-    fprintf (file, "a0");
-}
-
-static void
 riscv_print_reglist (FILE *file, rtx op)
 {
   /* we only deal with three formats:
@@ -3536,10 +3512,6 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'L':
       riscv_print_reglist (file, op);
-      break;
-
-    case 'G':
-      riscv_print_arglist (file, op);
       break;
 
     case 'S':
