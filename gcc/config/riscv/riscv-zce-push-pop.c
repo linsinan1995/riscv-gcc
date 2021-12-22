@@ -75,11 +75,10 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
 {
   rtx old_pat = PATTERN (old_rtx);
   rtx new_insn;
-  bool jump_insn_p = FALSE;
-  rtx_insn *insn;
   unsigned old_idx = 0, new_idx = 0, can_idx = 0;
   unsigned n_old = XVECLEN (old_pat, 0);
   unsigned n_new = n_old + n_args;
+  rtx dwarf = NULL_RTX;
 
   if (n_args == 0)
     return;
@@ -101,8 +100,19 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
     }
 
   /* Copy old insns.  */
-  for (; old_idx < n_old && new_idx < n_new; old_idx ++, new_idx ++)
-    XVECEXP (new_insn, 0, new_idx) = XVECEXP (old_pat, 0, old_idx);
+  for (; old_idx < n_old; old_idx ++, new_idx ++)
+    {
+	XVECEXP (new_insn, 0, new_idx) = XVECEXP (old_pat, 0, old_idx);
+	if (!push_p)
+	  {
+	    if (new_idx != n_old - 1)
+	      dwarf = alloc_reg_note (REG_CFA_RESTORE,
+		SET_DEST (XVECEXP (new_insn, 0, new_idx)), dwarf);
+	    else
+	      dwarf = alloc_reg_note (REG_CFA_DEF_CFA,
+		XVECEXP (new_insn, 0, new_idx), dwarf);
+	  }
+    }
 
   /* Add additional rtx.  */
   for (;new_idx < n_new; new_idx ++, can_idx ++)
@@ -112,7 +122,6 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
       /* ret pattern.  */
       if (GET_CODE (new_pat) == PARALLEL)
 	{
-	  jump_insn_p = TRUE;
 	  for (int i = 0; i < XVECLEN (new_pat, 0); i++, n_args--)
 	    XVECEXP (new_insn, 0, new_idx++) = XVECEXP (new_pat, 0, i);
 	}
@@ -128,11 +137,12 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
       print_rtl (dump_file, new_insn);
     }
 
-  if (jump_insn_p)
-    insn = emit_jump_insn_after (new_insn, old_rtx);
-  else
-    insn = emit_insn_after (new_insn, old_rtx);
-  RTX_FRAME_RELATED_P (insn) = 1;
+  new_insn = emit_insn_after (new_insn, old_rtx);
+
+  RTX_FRAME_RELATED_P (new_insn) = 1;
+  if (!push_p)
+    REG_NOTES (new_insn) = dwarf;
+
   delete_insn (old_rtx);
 }
 

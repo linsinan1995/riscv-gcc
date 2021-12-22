@@ -3409,30 +3409,6 @@ riscv_print_pop_size (FILE *file, rtx op)
 }
 
 static void
-riscv_print_arglist (FILE *file, rtx op)
-{
-  int total_count = 0;
-  int idx;
-  rtx ele;
-
-  /* ignore argument list. */
-  for (idx = XVECLEN (op, 0) - 1; idx >= 0; --idx)
-    {
-      ele = XVECEXP (op, 0, idx);
-      if (!(GET_CODE (ele) == SET
-	  && REG_P (SET_SRC (ele))
-	  && REG_P (SET_DEST (ele))))
-	break;
-      ++total_count;
-    }
-
-  if (total_count > 1)
-    fprintf (file, "a0-a%u", total_count - 1);
-  else if (total_count == 1)
-    fprintf (file, "a0");
-}
-
-static void
 riscv_print_reglist (FILE *file, rtx op)
 {
   /* we only deal with three formats:
@@ -3477,9 +3453,9 @@ riscv_print_reglist (FILE *file, rtx op)
 	n_regs ++;
     }
 
-  if (n_regs > 3)
+  if (n_regs > 2)
     fprintf (file, "ra,s0-s%u", n_regs - 2);
-  else if (n_regs > 2)
+  else if (n_regs > 1)
     fprintf (file, "ra,s0");
   else
     fputs("ra", file);
@@ -3536,10 +3512,6 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'L':
       riscv_print_reglist (file, op);
-      break;
-
-    case 'G':
-      riscv_print_arglist (file, op);
       break;
 
     case 'S':
@@ -4579,10 +4551,9 @@ riscv_expand_epilogue (int style)
     frame->mask = mask;
 
   /* Deallocate the final bit of the frame.  */
-  if (step2 > 0)
+  if (step2 > 0 && !use_zce_pop)
     {
-      if (!use_zce_pop)
-	insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
+      insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
 					 stack_pointer_rtx,
 					 GEN_INT (step2)));
 

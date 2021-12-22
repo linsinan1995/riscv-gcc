@@ -44,7 +44,30 @@
     [(set (reg:X SP_REGNUM) (plus:X (reg:X SP_REGNUM)
       (match_operand:X 1 "const_int_operand" "")))])]
   "TARGET_ZCEA"
-  "push\t{%L0},{%G0},%1")
+  {
+    static char push_templ[64];
+    unsigned total_count = 0;
+
+    /* ignore register list. */
+    for (int idx = XVECLEN (operands[0], 0) - 1; idx >= 0; --idx)
+      {
+	rtx ele = XVECEXP (operands[0], 0, idx);
+	if (!(GET_CODE (ele) == SET
+	    && REG_P (SET_SRC (ele))
+	    && REG_P (SET_DEST (ele))))
+	  break;
+	++total_count;
+      }
+
+    if (total_count > 1)
+      sprintf(push_templ, "push\t{%%L0},{a0-a%u},%%1", total_count - 1);
+    else if (total_count == 1)
+      sprintf(push_templ, "push\t{%%L0},{a0},%%1");
+    else
+      sprintf(push_templ, "push\t{%%L0},{},%%1");
+
+    return push_templ;
+  })
 
 (define_insn "*stack_pop<mode>"
   [(match_parallel 0 "riscv_stack_pop_operation"
@@ -68,4 +91,3 @@
 	"popret\t{%L0},{%1},%S0" :
 	"pop\t{%L0},{%1},%S0";
   })
-
