@@ -4910,6 +4910,12 @@ riscv_file_start (void)
   if (riscv_mzce_cmva01s07)
     fprintf (asm_out_file, "\t.option zce-cmva01s07\n");
 
+  if (riscv_mzce_push_pop)
+    fprintf (asm_out_file, "\t.option zce-push-pop\n");
+
+  if (riscv_mzce_cpush_cpop)
+    fprintf (asm_out_file, "\t.option zce-cpush-cpop\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }

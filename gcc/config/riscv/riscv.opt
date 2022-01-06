@@ -172,6 +172,9 @@ Target Bool Var(riscv_mzce_cmva01s07) Init(0)
 mzce-push-pop
 Target Bool Var(riscv_mzce_push_pop) Init(0)
 
+mzce-push-pop
+Target Bool Var(riscv_mzce_cpush_cpop) Init(0)
+
 Mask(64BIT)
 
 Mask(MUL)
