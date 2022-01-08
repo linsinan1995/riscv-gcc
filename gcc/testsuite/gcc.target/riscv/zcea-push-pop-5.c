@@ -13,5 +13,5 @@ int foo1(int n, int k)
   return mat[n][k];
 }
 
-/* { dg-final { scan-assembler "push\t{ra,s0-s11},{},-*" } } */
-/* { dg-final { scan-assembler "popret\t{ra,s0-s11},{},*" } } */
+/* { dg-final { scan-assembler "push\t{ra,s0-s11},-*" } } */
+/* { dg-final { scan-assembler "popret\t{ra,s0-s11},*" } } */

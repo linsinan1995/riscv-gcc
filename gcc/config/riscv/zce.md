@@ -64,7 +64,7 @@
     else if (total_count == 1)
       sprintf(push_templ, "push\t{%%L0},{a0},%%1");
     else
-      sprintf(push_templ, "push\t{%%L0},{},%%1");
+      sprintf(push_templ, "push\t{%%L0},%%1");
 
     return push_templ;
   })
@@ -77,8 +77,8 @@
   "TARGET_ZCEA"
   {
     return riscv_output_popret_p (operands[0]) ?
-	"popret\t{%L0},{},%S0" :
-	"pop\t{%L0},{},%S0";
+	"popret\t{%L0},%S0" :
+	"pop\t{%L0},%S0";
   })
 
 (define_insn "*stack_pop_with_return_value<mode>"
