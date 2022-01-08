@@ -11,5 +11,5 @@ int foo2(int b)
     return foo1(b);
 }
 
-/* { dg-final { scan-assembler "push\t{ra,s0},{},-*" } } */
-/* { dg-final { scan-assembler "popret\t{ra,s0},{},*" } } */
+/* { dg-final { scan-assembler "push\t{ra,s0},-*" } } */
+/* { dg-final { scan-assembler "popret\t{ra,s0},*" } } */
