@@ -104,12 +104,6 @@ AVAIL (crypto_zksed64, TARGET_ZKSED && TARGET_64BIT)
 AVAIL (crypto_zkr32, TARGET_ZKR && !TARGET_64BIT)
 AVAIL (crypto_zkr64, TARGET_ZKR && TARGET_64BIT)
 
-AVAIL (zce_zcea32, TARGET_ZCEA && !TARGET_64BIT)
-AVAIL (zce_zcea64, TARGET_ZCEA && TARGET_64BIT)
-AVAIL (zce_zcee32, TARGET_ZCEE && !TARGET_64BIT)
-AVAIL (zce_zcee64, TARGET_ZCEE && TARGET_64BIT)
-AVAIL (zce_zceb32, TARGET_ZCEB && !TARGET_64BIT)
-AVAIL (zce_zceb64, TARGET_ZCEB && TARGET_64BIT)
 /* Construct a riscv_builtin_description from the given arguments.
 
    INSN is the name of the associated instruction pattern, without the
