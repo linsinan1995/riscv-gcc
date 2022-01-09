@@ -3,6 +3,7 @@
 
 int foo2 (int, int);
 
+/* Test reglist of push and pop. */
 int foo1(int n, int k)
 {
   int mat[n + 1][k + 1];

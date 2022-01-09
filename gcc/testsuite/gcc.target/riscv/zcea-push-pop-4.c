@@ -3,6 +3,7 @@
 
 void foo2 (int a, int b, int c, int d, int e);
 
+/* Test the areglist of push and the return value of popret. */
 int foo1(int a, int b, int c, int d, int e)
 { 
     if (b < a)

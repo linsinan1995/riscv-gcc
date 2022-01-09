@@ -107,9 +107,6 @@ struct GTY(())  riscv_frame_info {
   /* Likewise FPR X.  */
   unsigned int fmask;
 
-  /* Number of called saved registers that need to be saved */
-  unsigned int num_x_saved;
-
   /* How much the GPR save/restore routines adjust sp (or 0 if unused).  */
   unsigned save_libcall_adjustment;
 
@@ -3902,8 +3899,6 @@ riscv_compute_frame_info (void)
   /* Only use save/restore routines when the GPRs are atop the frame.  */
   if (frame->hard_frame_pointer_offset != frame->total_size)
     frame->save_libcall_adjustment = 0;
-
-  frame->num_x_saved = num_x_saved;
 }
 
 /* Make sure that we're not trying to eliminate to the wrong hard frame
@@ -4000,6 +3995,9 @@ riscv_for_each_saved_reg (HOST_WIDE_INT sp_offset, riscv_save_restore_fn fn,
 
   /* Save the link register and s-registers. */
   offset = cfun->machine->frame.gp_sp_offset - sp_offset;
+  if (!epilogue)
+  printf("cfun->machine->frame.gp_sp_offset(%d) - sp_offset(%d) = offset(%d)\n", cfun->machine->frame.gp_sp_offset, sp_offset, offset);
+
   for (unsigned int regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
     if (BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
       {
@@ -4024,7 +4022,11 @@ riscv_for_each_saved_reg (HOST_WIDE_INT sp_offset, riscv_save_restore_fn fn,
 	  }
 
 	if (handle_reg)
-	  riscv_save_restore_reg (word_mode, regno, offset, fn);
+	  {
+	    if (!epilogue)
+	    printf("regno=%u, offset=%d\n", regno, offset);
+	    riscv_save_restore_reg (word_mode, regno, offset, fn);
+	  }
 	offset -= UNITS_PER_WORD;
       }
 
@@ -4246,50 +4248,114 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   return true;
 }
 
-/* Generate push/pop rtx */
-rtx
-riscv_gen_pushpop (struct riscv_frame_info *frame,
-    HOST_WIDE_INT offset, HOST_WIDE_INT size, bool push_p)
+/* Emit an instruction of push, pop and popret.  */
+
+static void
+riscv_emit_push_pop (unsigned n_reg, HOST_WIDE_INT *total_size,
+    HOST_WIDE_INT *push_pop_size, bool push_p)
 {
-  rtx set_rtx, adjust_sp_rtx;
-  rtx dwarf = NULL_RTX;
+  if (n_reg == 0)
+    return;
+
   int step = -UNITS_PER_WORD;
+  HOST_WIDE_INT size = *total_size;
   unsigned par_index = push_p ? 1 : 0;
-  unsigned adjust_sp_idx = push_p ? 0 : frame->num_x_saved;
+  unsigned sp_adjust_idx = push_p ? 0 : (n_reg - 1);
 
-  rtx insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (frame->num_x_saved + 1));
+  rtx insn = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (n_reg + 1));
 
-  offset += step;
-
-  for (unsigned regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
+  for (unsigned regno = GP_REG_FIRST; regno <= GP_REG_LAST && n_reg > 0; regno++, n_reg--)
     {
-      if (!BITSET_P (cfun->machine->frame.mask, regno - GP_REG_FIRST))
+      if (call_used_regs[regno])
 	continue;
+
+      rtx dwarf = NULL_RTX;
+      size += step;
+      printf("size=%d\n", size);
       rtx reg = gen_rtx_REG (Pmode, regno);
       rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
 	      stack_pointer_rtx,
-	      offset));
+	      size));
       rtx src = push_p ? reg : mem;
       rtx dst = push_p ? mem : reg;
-      set_rtx = gen_rtx_SET (dst, src);
-      XVECEXP (insn, 0, par_index) = set_rtx;
-      RTX_FRAME_RELATED_P (set_rtx) = 1;
-      offset += step;
-      par_index++;
+      rtx set = gen_rtx_SET (dst, src);
 
-      if (!push_p)
+      if (push_p)
+	RTX_FRAME_RELATED_P (set) = 1;
+      else
 	dwarf = alloc_reg_note (REG_CFA_RESTORE, dst, dwarf);
+
+      XVECEXP (insn, 0, par_index) = set;
+      par_index++;
     }
 
-  adjust_sp_rtx
+  printf("push_pop_size=%d, total_size=%d, size=%d\n", *push_pop_size, *total_size, size);
+  int max_allow_sp_adjust = 512 + ((n_reg * UNITS_PER_WORD) / 16) * 16;
+  int push_pop_sp_adjust;
+
+  if (*push_pop_size > max_allow_sp_adjust)
+    {
+      if (push_p)
+	{
+	  push_pop_sp_adjust = -max_allow_sp_adjust;
+	}
+	else
+	{
+	push_pop_sp_adjust=max_allow_sp_adjust;
+	}
+	*total_size -= max_allow_sp_adjust;
+	*push_pop_size -= max_allow_sp_adjust;
+    }
+  else
+    {
+      if (push_p)
+	{
+	  push_pop_sp_adjust = -(*push_pop_size);
+	}
+	else
+	{
+	push_pop_sp_adjust=*push_pop_size;
+	}
+	*total_size -= *push_pop_size;
+	*push_pop_size = 0;
+    }
+
+  rtx adjust_sp_rtx
       = gen_rtx_SET (stack_pointer_rtx,
 	    plus_constant (Pmode,
 	    stack_pointer_rtx,
-	    size));
-  XVECEXP (insn, 0, adjust_sp_idx) = adjust_sp_rtx;
+	    push_pop_sp_adjust));
+
+  XVECEXP (insn, 0, sp_adjust_idx) = adjust_sp_rtx;
   RTX_FRAME_RELATED_P (adjust_sp_rtx) = 1;
 
-  return insn;
+  insn = emit_insn (insn);
+  RTX_FRAME_RELATED_P (insn) = 1;
+}
+
+static unsigned
+riscv_push_pop_use_reg (struct riscv_frame_info *frame)
+{
+  if (!riscv_mzce_push_pop)
+    return 0;
+
+  unsigned num_reg = 0;
+
+  for (unsigned regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
+    {
+      if (call_used_regs [regno])
+	continue;
+      else if (BITSET_P (frame->mask, regno - GP_REG_FIRST))
+	{
+	  printf("regno in use = %u\n", regno);
+	  ++ num_reg;
+	  frame->mask &= ~(1 << (regno - GP_REG_FIRST));
+	  continue;
+	}
+      break;
+    }
+
+  return num_reg;
 }
 
 /* Expand the "prologue" pattern.  */
@@ -4300,8 +4366,6 @@ riscv_expand_prologue (void)
   struct riscv_frame_info *frame = &cfun->machine->frame;
   HOST_WIDE_INT size = frame->total_size;
   unsigned mask = frame->mask;
-  bool use_zce_push = riscv_mzce_push_pop
-      && (frame->mask & (1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST)));
   rtx insn;
 
   if (flag_stack_usage_info)
@@ -4328,21 +4392,22 @@ riscv_expand_prologue (void)
   if ((frame->mask | frame->fmask) != 0)
     {
       HOST_WIDE_INT step1 = MIN (size, riscv_first_stack_step (frame));
-      if (use_zce_push)
+      unsigned push_n_reg = riscv_push_pop_use_reg (frame);
+      printf("push_n_reg=%d, step1=%d, size=%d\n", push_n_reg,step1,size);
+      riscv_emit_push_pop (push_n_reg, &size, &step1, TRUE);
+      printf("after pushpop size=%d, step1=%d\n", size, step1);
+
+      if (step1 > 0)
 	{
-	  insn = riscv_gen_pushpop (frame, size, -step1, TRUE);
-	  frame->mask = 0;
+	  insn = gen_add3_insn (stack_pointer_rtx,
+			      stack_pointer_rtx,
+			      GEN_INT (-step1));
+	  RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
+	  size -= step1;
+	if ((frame->mask | frame->fmask) != 0)
+		riscv_for_each_saved_reg (size, riscv_save_reg,
+			false /* bool epilogue */, false /* bool maybe_eh_return */);
 	}
-      else
-	insn = gen_add3_insn (stack_pointer_rtx,
-			    stack_pointer_rtx,
-			    GEN_INT (-step1));
-
-     RTX_FRAME_RELATED_P (emit_insn (insn)) = 1;
-     size -= step1;
-
-     riscv_for_each_saved_reg (size, riscv_save_reg,
-	 false /* bool epilogue */, false /* bool maybe_eh_return */);
     }
 
   /* useful when you use -msave-restore */
@@ -4423,12 +4488,10 @@ riscv_expand_epilogue (int style)
   bool use_restore_libcall = ((style == NORMAL_RETURN)
 			      && riscv_use_save_libcall (frame));
   rtx ra = gen_rtx_REG (Pmode, RETURN_ADDR_REGNUM);
-  rtx insn;
-
   bool use_zce_pop = riscv_mzce_push_pop
-      && (frame->mask & (1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST)))
       && !use_restore_libcall
       && !(crtl->calls_eh_return);
+  rtx insn;
 
   /* We need to add memory barrier to prevent read from deallocated stack.  */
   bool need_barrier_p = (get_frame_size ()
@@ -4526,12 +4589,11 @@ riscv_expand_epilogue (int style)
   if (use_restore_libcall)
     frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
 
-  if (use_zce_pop)
-    {
-      insn = riscv_gen_pushpop (frame, frame->total_size, step2, FALSE);
-      insn = emit_insn (insn);
-      frame->mask = 0;
-    }
+//   if (use_zce_pop)
+//     {
+//       unsigned push_n_reg = riscv_push_pop_use_reg (frame);
+//       riscv_emit_push_pop (push_n_reg, &frame->total_size, &step2, FALSE);
+//     }
 
   /* Restore the registers.  */
   riscv_for_each_saved_reg (frame->total_size - step2, riscv_restore_reg,
@@ -4547,11 +4609,8 @@ riscv_expand_epilogue (int style)
   if (need_barrier_p)
     riscv_emit_stack_tie ();
 
-  if (use_zce_pop)
-    frame->mask = mask;
-
   /* Deallocate the final bit of the frame.  */
-  if (step2 > 0 && !use_zce_pop)
+  if (step2 > 0)
     {
       insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
 					 stack_pointer_rtx,

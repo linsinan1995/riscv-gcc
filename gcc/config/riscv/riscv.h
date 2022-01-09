@@ -961,4 +961,8 @@ extern void riscv_remove_unneeded_save_restore_calls (void);
 
 #define HARD_REGNO_RENAME_OK(FROM, TO) riscv_hard_regno_rename_ok (FROM, TO)
 
+/* ZCE extension */
+#define RISCV_ZCE_PUSH_POP_MASK 0x40c03ff0
+#define GP_S11 27 + GP_REG_FIRST
+
 #endif /* ! GCC_RISCV_H */
