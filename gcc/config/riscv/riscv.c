@@ -5012,6 +5012,9 @@ riscv_file_start (void)
   if (riscv_mzce_cpush_cpop)
     fprintf (asm_out_file, "\t.option zce-cpush-cpop\n");
 
+  if (riscv_mzce_tbljal)
+    fprintf (asm_out_file, "\t.option zce-tbljal\n");
+
   if (riscv_emit_attribute_p)
     riscv_emit_attribute ();
 }
