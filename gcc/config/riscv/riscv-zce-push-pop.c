@@ -100,7 +100,10 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
 
   /* Copy old insns.  */
   for (; old_idx < n_old; old_idx ++, new_idx ++)
-    XVECEXP (new_insn, 0, new_idx) = XVECEXP (old_pat, 0, old_idx);
+    {
+      XVECEXP (new_insn, 0, new_idx) = XVECEXP (old_pat, 0, old_idx);
+      REG_NOTES (XVECEXP (new_insn, 0, new_idx)) = REG_NOTES (XVECEXP (old_pat, 0, old_idx));
+    }
 
   /* Add additional rtx.  */
   for (;new_idx < n_new; new_idx ++, can_idx ++)
@@ -126,9 +129,9 @@ emit_zce_stack_insn (rtx_insn *old_rtx, rtx_insn **candidates, unsigned n_args, 
     }
 
   new_insn = emit_insn_after (new_insn, old_rtx);
+  REG_NOTES (new_insn) = REG_NOTES (old_rtx);
 
   RTX_FRAME_RELATED_P (new_insn) = 1;
-
   delete_insn (old_rtx);
 }
 

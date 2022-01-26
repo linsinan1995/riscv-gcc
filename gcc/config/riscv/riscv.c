@@ -4285,11 +4285,12 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
 
 /* Generate push/pop rtx */
 
-static rtx
-riscv_gen_push (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_INT size)
+static void
+riscv_emit_push_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size)
 {
   unsigned int veclen = riscv_save_push_pop_count (frame->mask);
   unsigned int n_reg = veclen - 1;
+  rtx dwarf = NULL_RTX;
   rtvec vec = rtvec_alloc (veclen);
 
   gcc_assert (n_reg <= ARRAY_SIZE (push_save_reg_order)
@@ -4301,38 +4302,46 @@ riscv_gen_push (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_
       max_allow_sp_adjust
       : size;
 
+  /*TODO: move this part to frame computation function. */
+  frame->push_pop_offset = (veclen - 1) * UNITS_PER_WORD;
+  frame->push_pop_sp_adjust = sp_adjust;
+
   rtx adjust_sp_rtx
       = gen_rtx_SET (stack_pointer_rtx,
 	    plus_constant (Pmode,
 	    stack_pointer_rtx,
 	    -sp_adjust));
   RTVEC_ELT (vec, 0) = adjust_sp_rtx;
+  dwarf = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_sp_rtx, dwarf);
 
   /* Register save sequence. */
   for (unsigned i = 1; i < veclen; ++i)
     {
-      offset -= UNITS_PER_WORD;
+      sp_adjust -= UNITS_PER_WORD;
       unsigned regno = push_save_reg_order[i];
       rtx reg = gen_rtx_REG (Pmode, regno);
       rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
 	      stack_pointer_rtx,
-	      offset));
+	      sp_adjust));
       rtx set = gen_rtx_SET (mem, reg);
       RTVEC_ELT (vec, i) = set;
+      RTX_FRAME_RELATED_P (set) = 1;
+      dwarf = alloc_reg_note (REG_CFA_OFFSET, set, dwarf);
     }
 
-  frame->push_pop_offset = (veclen - 1) * UNITS_PER_WORD;
-  frame->push_pop_sp_adjust = sp_adjust;
-  return gen_rtx_PARALLEL (VOIDmode, vec);
+  rtx insn = emit_insn (gen_rtx_PARALLEL (VOIDmode, vec));
+  RTX_FRAME_RELATED_P (insn) = 1;
+  REG_NOTES (insn) = dwarf;
 }
 
-static rtx
-riscv_gen_pop (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_INT size)
+static void
+riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size, HOST_WIDE_INT size)
 {
   unsigned int veclen = riscv_save_push_pop_count (frame->mask);
   unsigned int n_reg = veclen - 1;
   rtvec vec = rtvec_alloc (veclen);
   HOST_WIDE_INT sp_adjust;
+  rtx dwarf = NULL_RTX;
 
   gcc_assert (n_reg <= ARRAY_SIZE (push_save_reg_order)
       && n_reg >= 1);
@@ -4343,15 +4352,15 @@ riscv_gen_pop (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_I
   /* if sp adjustment is invalid, we should split it. */
   if (size > max_allow_sp_adjust)
     {
-      rtx insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
-				stack_pointer_rtx,
-				GEN_INT (size - max_allow_sp_adjust)));
-      rtx dwarf = NULL_RTX;
-      rtx cfa_adjust_rtx = gen_rtx_PLUS (Pmode, stack_pointer_rtx,
-					 const0_rtx);
-      dwarf = alloc_reg_note (REG_CFA_DEF_CFA, cfa_adjust_rtx, dwarf);
+      rtx dwarf_sp_adjust = NULL_RTX;
+      rtx adjust_rtx = gen_add3_insn (stack_pointer_rtx,
+			stack_pointer_rtx,
+			GEN_INT (size - max_allow_sp_adjust));
+      dwarf_sp_adjust = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_rtx, dwarf_sp_adjust);
+      rtx insn = emit_insn (adjust_rtx);
+
       RTX_FRAME_RELATED_P (insn) = 1;
-      REG_NOTES (insn) = dwarf;
+      REG_NOTES (insn) = dwarf_sp_adjust;
 
       sp_adjust = max_allow_sp_adjust;
     }
@@ -4369,6 +4378,7 @@ riscv_gen_pop (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_I
 	      offset));
       rtx set = gen_rtx_SET (reg, mem);
       RTVEC_ELT (vec, i - 1) = set;
+      dwarf = alloc_reg_note (REG_CFA_RESTORE, reg, dwarf);
     }
 
   /* sp adjust pattern */
@@ -4378,10 +4388,14 @@ riscv_gen_pop (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_I
 	    stack_pointer_rtx,
 	    sp_adjust));
   RTVEC_ELT (vec, veclen - 1) = adjust_sp_rtx;
+  dwarf = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_sp_rtx, dwarf);
 
   frame->push_pop_offset = (veclen - 1) * UNITS_PER_WORD;
   frame->push_pop_sp_adjust = sp_adjust;
-  return gen_rtx_PARALLEL (VOIDmode, vec);
+
+  rtx insn = emit_insn (gen_rtx_PARALLEL (VOIDmode, vec));
+  RTX_FRAME_RELATED_P (insn) = 1;
+  REG_NOTES (insn) = dwarf;
 }
 
 /* Expand the "prologue" pattern.  */
@@ -4419,9 +4433,7 @@ riscv_expand_prologue (void)
 
   if (riscv_use_push_pop (frame))
     {
-      insn = riscv_gen_push (frame, size, step1);
-      insn = emit_insn (insn);
-      RTX_FRAME_RELATED_P (insn) = 1;
+      riscv_emit_push_insn (frame, step1);
 
       step1 -= frame->push_pop_sp_adjust;
       size -= frame->push_pop_sp_adjust;
@@ -4620,11 +4632,10 @@ riscv_expand_epilogue (int style)
   if (use_restore_libcall)
     frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
 
+//   cfun->machine->frame.push_pop_offset = 0;
   if (riscv_use_push_pop (frame))
     {
-      insn = riscv_gen_pop (frame, frame->total_size, step2);
-      insn = emit_insn (insn);
-      RTX_FRAME_RELATED_P (insn) = 1;
+      riscv_emit_pop_insn (frame, frame->total_size, step2);
       frame->mask &= ~RISCV_ZCE_PUSH_POP_MASK;
     }
 
