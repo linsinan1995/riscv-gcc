@@ -4283,6 +4283,15 @@ riscv_valid_stack_push_pop_p (rtx op, bool push_p)
   return true;
 }
 
+static unsigned
+riscv_push_pop_max_sp_adjust (unsigned mask)
+{
+  int lowerb = 496;
+  unsigned n_regs = riscv_save_push_pop_count (mask) - 1;
+  int align16 = (n_regs * UNITS_PER_WORD + 15) & (~0xf);
+  return lowerb + align16;
+}
+
 /* Generate push/pop rtx */
 
 static void
@@ -4297,7 +4306,7 @@ riscv_emit_push_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size)
       && n_reg >= 1);
 
   /* sp adjust pattern */
-  int max_allow_sp_adjust = 512 + ((n_reg * UNITS_PER_WORD) / 16) * 16;
+  int max_allow_sp_adjust = riscv_push_pop_max_sp_adjust (frame->mask);
   int sp_adjust = size > max_allow_sp_adjust ?
       max_allow_sp_adjust
       : size;
@@ -4335,7 +4344,7 @@ riscv_emit_push_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size)
 }
 
 static void
-riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size, HOST_WIDE_INT size)
+riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_INT size)
 {
   unsigned int veclen = riscv_save_push_pop_count (frame->mask);
   unsigned int n_reg = veclen - 1;
@@ -4347,7 +4356,7 @@ riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size, HOST_WI
       && n_reg >= 1);
 
   /* sp adjust pattern */
-  int max_allow_sp_adjust = 512 + ((n_reg * UNITS_PER_WORD) / 16) * 16;
+  int max_allow_sp_adjust = riscv_push_pop_max_sp_adjust (frame->mask);
 
   /* if sp adjustment is invalid, we should split it. */
   if (size > max_allow_sp_adjust)
