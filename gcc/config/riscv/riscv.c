@@ -3774,7 +3774,8 @@ riscv_use_save_libcall (const struct riscv_frame_info *frame)
 static bool
 riscv_use_push_pop (const struct riscv_frame_info *frame)
 {
-  if (!riscv_mzce_push_pop)
+  if (!riscv_mzce_push_pop
+	|| cfun->machine->naked_p)
     return false;
 
   return frame->mask & (1 << (RETURN_ADDR_REGNUM - GP_REG_FIRST));
@@ -3793,6 +3794,15 @@ riscv_save_push_pop_count (unsigned mask)
       /* add ra saving and sp adjust. */
       return CALLEE_SAVED_REG_NUMBER (n) + 1 + 2;
   abort ();
+}
+
+static unsigned
+riscv_push_pop_max_sp_adjust (unsigned mask)
+{
+  int lowerb = 496;
+  unsigned n_regs = riscv_save_push_pop_count (mask) - 1;
+  int align16 = (n_regs * UNITS_PER_WORD + 15) & (~0xf);
+  return lowerb + align16;
 }
 
 /* Determine which GPR save/restore routine to call.  */
@@ -3939,8 +3949,21 @@ riscv_compute_frame_info (void)
   if (frame->hard_frame_pointer_offset != frame->total_size)
     frame->save_libcall_adjustment = 0;
 
-  frame->push_pop_offset = 0;
-  frame->push_pop_sp_adjust = 0;
+  if (riscv_use_push_pop (frame))
+    {
+      unsigned n_insns = riscv_save_push_pop_count (frame->mask);
+      int max_allow_sp_adjust = riscv_push_pop_max_sp_adjust (frame->mask);
+
+      frame->push_pop_offset = (n_insns - 1) * UNITS_PER_WORD;
+      frame->push_pop_sp_adjust = frame->total_size > max_allow_sp_adjust ?
+					max_allow_sp_adjust
+					: frame->total_size;
+    }
+  else
+    {
+      frame->push_pop_offset = 0;
+      frame->push_pop_sp_adjust = 0;
+    }
 }
 
 /* Make sure that we're not trying to eliminate to the wrong hard frame
@@ -4116,21 +4139,34 @@ riscv_restore_reg (rtx reg, rtx mem)
 static HOST_WIDE_INT
 riscv_first_stack_step (struct riscv_frame_info *frame)
 {
-  if (SMALL_OPERAND (frame->total_size))
-    return frame->total_size;
+  HOST_WIDE_INT size = frame->total_size;
+  HOST_WIDE_INT fp_sp_offset = frame->fp_sp_offset;
+
+  /* If zcea push instruction is in use, it can help
+     allocate a part of space.  */
+  if (riscv_use_push_pop (frame))
+    {
+      gcc_assert (frame->push_pop_offset <= size
+	&& frame->push_pop_offset);
+      size -= frame->push_pop_sp_adjust;
+      fp_sp_offset -= frame->push_pop_sp_adjust;
+    }
+
+  if (SMALL_OPERAND (size))
+    return size;
 
   HOST_WIDE_INT min_first_step =
-    RISCV_STACK_ALIGN (frame->total_size - frame->fp_sp_offset);
+    RISCV_STACK_ALIGN (size - fp_sp_offset);
   HOST_WIDE_INT max_first_step = IMM_REACH / 2 - PREFERRED_STACK_BOUNDARY / 8;
-  HOST_WIDE_INT min_second_step = frame->total_size - max_first_step;
+  HOST_WIDE_INT min_second_step = size - max_first_step;
   gcc_assert (min_first_step <= max_first_step);
 
   /* As an optimization, use the least-significant bits of the total frame
      size, so that the second adjustment step is just LUI + ADD.  */
   if (!SMALL_OPERAND (min_second_step)
-      && frame->total_size % IMM_REACH < IMM_REACH / 2
-      && frame->total_size % IMM_REACH >= min_first_step)
-    return frame->total_size % IMM_REACH;
+      && size % IMM_REACH < IMM_REACH / 2
+      && size % IMM_REACH >= min_first_step)
+    return size % IMM_REACH;
 
   if (TARGET_RVC)
     {
@@ -4296,15 +4332,7 @@ riscv_emit_push_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size)
   gcc_assert (n_reg <= ARRAY_SIZE (push_save_reg_order)
       && n_reg >= 1);
 
-  /* sp adjust pattern */
-  int max_allow_sp_adjust = 512 + ((n_reg * UNITS_PER_WORD) / 16) * 16;
-  int sp_adjust = size > max_allow_sp_adjust ?
-      max_allow_sp_adjust
-      : size;
-
-  /*TODO: move this part to frame computation function. */
-  frame->push_pop_offset = (veclen - 1) * UNITS_PER_WORD;
-  frame->push_pop_sp_adjust = sp_adjust;
+  int sp_adjust = frame->push_pop_sp_adjust;
 
   rtx adjust_sp_rtx
       = gen_rtx_SET (stack_pointer_rtx,
@@ -4335,47 +4363,45 @@ riscv_emit_push_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size)
 }
 
 static void
-riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size, HOST_WIDE_INT size)
+riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT offset, HOST_WIDE_INT size)
 {
   unsigned int veclen = riscv_save_push_pop_count (frame->mask);
   unsigned int n_reg = veclen - 1;
   rtvec vec = rtvec_alloc (veclen);
-  HOST_WIDE_INT sp_adjust;
   rtx dwarf = NULL_RTX;
 
   gcc_assert (n_reg <= ARRAY_SIZE (push_save_reg_order)
       && n_reg >= 1);
 
-  /* sp adjust pattern */
-  int max_allow_sp_adjust = 512 + ((n_reg * UNITS_PER_WORD) / 16) * 16;
+  int sp_adjust = frame->push_pop_sp_adjust;
 
-  /* if sp adjustment is invalid, we should split it. */
-  if (size > max_allow_sp_adjust)
-    {
-      rtx dwarf_sp_adjust = NULL_RTX;
-      rtx adjust_rtx = gen_add3_insn (stack_pointer_rtx,
-			stack_pointer_rtx,
-			GEN_INT (size - max_allow_sp_adjust));
-      dwarf_sp_adjust = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_rtx, dwarf_sp_adjust);
-      rtx insn = emit_insn (adjust_rtx);
+//   /* if sp adjustment is invalid, we should split it. */
+//   if (size > max_allow_sp_adjust)
+//     {
+//       rtx dwarf_sp_adjust = NULL_RTX;
+//       rtx adjust_rtx = gen_add3_insn (stack_pointer_rtx,
+// 			stack_pointer_rtx,
+// 			GEN_INT (size - max_allow_sp_adjust));
+//       dwarf_sp_adjust = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_rtx, dwarf_sp_adjust);
+//       rtx insn = emit_insn (adjust_rtx);
 
-      RTX_FRAME_RELATED_P (insn) = 1;
-      REG_NOTES (insn) = dwarf_sp_adjust;
+//       RTX_FRAME_RELATED_P (insn) = 1;
+//       REG_NOTES (insn) = dwarf_sp_adjust;
 
-      sp_adjust = max_allow_sp_adjust;
-    }
-  else
-    sp_adjust = size;
+//       sp_adjust = max_allow_sp_adjust;
+//     }
+//   else
+//     sp_adjust = size;
 
   /* register save sequence. */
   for (unsigned i = 1; i < veclen; ++i)
     {
-      offset -= UNITS_PER_WORD;
+      sp_adjust -= UNITS_PER_WORD;
       unsigned regno = push_save_reg_order[i];
       rtx reg = gen_rtx_REG (Pmode, regno);
       rtx mem = gen_frame_mem (Pmode, plus_constant (Pmode,
 	      stack_pointer_rtx,
-	      offset));
+	      sp_adjust));
       rtx set = gen_rtx_SET (reg, mem);
       RTVEC_ELT (vec, i - 1) = set;
       dwarf = alloc_reg_note (REG_CFA_RESTORE, reg, dwarf);
@@ -4386,12 +4412,9 @@ riscv_emit_pop_insn (struct riscv_frame_info *frame, HOST_WIDE_INT size, HOST_WI
       = gen_rtx_SET (stack_pointer_rtx,
 	    plus_constant (Pmode,
 	    stack_pointer_rtx,
-	    sp_adjust));
+	    frame->push_pop_sp_adjust));
   RTVEC_ELT (vec, veclen - 1) = adjust_sp_rtx;
   dwarf = alloc_reg_note (REG_CFA_ADJUST_CFA, adjust_sp_rtx, dwarf);
-
-  frame->push_pop_offset = (veclen - 1) * UNITS_PER_WORD;
-  frame->push_pop_sp_adjust = sp_adjust;
 
   rtx insn = emit_insn (gen_rtx_PARALLEL (VOIDmode, vec));
   RTX_FRAME_RELATED_P (insn) = 1;
@@ -4429,15 +4452,14 @@ riscv_expand_prologue (void)
       REG_NOTES (insn) = dwarf;
     }
 
+  printf("riscv_first_stack_step (frame) = %d\n", riscv_first_stack_step (frame));
   step1 = MIN (size, riscv_first_stack_step (frame));
-
+  printf("step1 = %d\n", step1);
+  printf("frame->push_pop_offset=%d\n", frame->push_pop_offset);
   if (riscv_use_push_pop (frame))
     {
       riscv_emit_push_insn (frame, step1);
-
-      step1 -= frame->push_pop_sp_adjust;
       size -= frame->push_pop_sp_adjust;
-      gcc_assert (step1 >= 0);
       frame->mask &= ~RISCV_ZCE_PUSH_POP_MASK;
     }
 
@@ -4595,6 +4617,12 @@ riscv_expand_epilogue (int style)
       step1 -= step2;
     }
 
+  printf("step1=%d, step2=%d, epilogue\n", step1, step2);
+  if (riscv_use_push_pop (frame))
+  {
+    step1 -= frame->push_pop_sp_adjust;
+  }
+
   /* Set TARGET to BASE + STEP1.  */
   if (step1 > 0)
     {
@@ -4632,7 +4660,6 @@ riscv_expand_epilogue (int style)
   if (use_restore_libcall)
     frame->mask = 0; /* Temporarily fib that we need not save GPRs.  */
 
-//   cfun->machine->frame.push_pop_offset = 0;
   if (riscv_use_push_pop (frame))
     {
       riscv_emit_pop_insn (frame, frame->total_size, step2);
